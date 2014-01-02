@@ -65,8 +65,7 @@ before '/ebooklist/*' do
 end
 
 get '/' do
-
-  # redirect '/index.html'
+  redirect '/index.html'
 end
 
 # 1 直接登录 sso 的地址(假设未登录任何子系统,可以直接到本入口地址进行登录,登录后 再自动跳转回指定的子系统)
@@ -81,6 +80,7 @@ get '/login' do
   # redirect "http://sso.server.ip.address/ssoServer/login?AppId=kidslib;service:#{settings.site_url}/set;signData=digest_msg"
 end
 
+# 暂时没有提供用户logout的地方，也不准备提供。我们可以吧session过期时间设定短一点
 get '/logout' do
   session.clear
   redirect '/'
@@ -97,10 +97,7 @@ get '/set-session' do
   # redirect to('/')
 end
 
-get '/all-tickets' do
-  TICKET_DB.transaction { TICKET_DB[ticket] = Time.now.to_i }
-end
-
+# html中放站点所有html文件，且要保持目录
 get '/*' do |path|
   File.read "html/#{path}"
 end

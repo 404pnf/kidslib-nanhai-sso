@@ -24,8 +24,26 @@ helpers do
     valid?(ticket) ? true : false
   end
 
+  def valid?(ticket)
+    if has_ticket?(ticket) && !expired?(ticket)
+      extend_ticket_time ticket
+      true
+    else
+      delete_ticket ticket
+      false
+    end
+  end
+
   def has_ticket?(ticket)
     TICKET_DB.transaction { TICKET_DB.fetch(ticket, nil) }
+  end
+
+  def expired?(ticket)
+    Time.now.to_i - has_ticket?(ticket) > settings.session_valid_for
+  end
+
+  def extend_ticket_time(ticket)
+    TICKET_DB.transaction { TICKET_DB[ticket] = Time.now.to_i + settings.session_valid_for }
   end
 
   def delete_ticket(ticket)
@@ -34,24 +52,6 @@ helpers do
 
   def save_ticket(ticket)
     TICKET_DB.transaction { TICKET_DB[ticket] = Time.now.to_i }
-  end
-
-  def extend_ticket_time(ticket)
-    TICKET_DB.transaction { TICKET_DB[ticket] = Time.now.to_i + settings.session_valid_for }
-  end
-
-  def expired?(ticket)
-    Time.now.to_i - has_ticket?(ticket) > settings.session_valid_for
-  end
-
-  def valid?(ticket)
-    if has_ticket?(ticket) && !expired?(ticket)
-      extend_ticket_time ticket
-      true
-    else
-      delete_ticket(ticket)
-      false
-    end
   end
 
 end
@@ -70,10 +70,8 @@ end
 
 # 1 直接登录 sso 的地址(假设未登录任何子系统,可以直接到本入口地址进行登录,登录后 再自动跳转回指定的子系统)
 # 接口地址:http://sso.server.ip.address/ssoServer/login 提交给该接口的参数列表(get 形式的参数与 post 方式均可):
-# 1)service:认证结束后跳转地址(希望登录成功后跳转到哪儿去的地址,
-# 例如 http://xxx/yyy.asp)
-# 2)AppId:子系统标识 ID(在 UCenter 中定义每个子系统的 AppId,也是 ssoServer 中的
-# AppId)
+# 1)service:认证结束后跳转地址(希望登录成功后跳转到哪儿去的地址,例如 http://xxx/yyy.asp)
+# 2)AppId:子系统标识 ID(在 UCenter 中定义每个子系统的 AppId,也是 ssoServer 中的AppId)
 # 3)signData:数据签名(用 MD5 对 service+AppId + 固定的混淆码加密)(本签名非必须)
 get '/login' do
   'ready to login?'

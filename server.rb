@@ -58,7 +58,11 @@ helpers do
 end
 
 before '/ebooklist/*' do
- valid?（session['ticket']）? pass : redirect '/login'
+  if valid?(session['ticket'])
+    pass
+  else
+    redirect '/login'
+  end
 end
 
 get '/' do

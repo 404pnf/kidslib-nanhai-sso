@@ -28,3 +28,11 @@ https://github.com/sinatra/sinatra/issues/761#issuecomment-31435059
 你能帮帮我么？
 
 
+## 直接将session信息存到内存的hash中
+
+之前不成功是因为开发时用shotgun，每次访问页面都重载整个rb文件，因此，内存中的db每次都重新被初始化，自然只能记住最后一次的结果。
+
+在没想到是这个原因的时候，我改用pstore持久化到文件中。效果也不错。但还是麻烦。
+
+现在改回用内存中的hash了。
+

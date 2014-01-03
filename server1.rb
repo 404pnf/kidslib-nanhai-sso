@@ -9,7 +9,7 @@ require 'sinatra'
 # 5. 每次用户访问一个页面，在本地的db中延长一下ticket过期时间
 
 configure do
-  enable :sessions
+  enable :sessions # all request will have session either we set it or rack:session sets it automatically
   set :site_url, 'http://0.0.0.0/'
   set :session_valid_for, 60 * 1 # 60 minutes
   set :sso_server, 'http://sso.server.ip'
@@ -21,26 +21,35 @@ helpers do
   # 之前测试不行是因为每次请求 shotgun 都重新载入这个文件
   DB = {}
 
-  def logged_in?(ticket)
-    valid?(ticket) ? true : false
+  # interface
+  def save_ticket(ticket)
+    DB[ticket] = Time.now.to_i
   end
 
   def valid?(ticket)
-    if ticket?(ticket) && !expired?(ticket)
-      extend_ticket_time ticket
-      true
-    else
-      delete_ticket ticket
-      false
-    end
+    # if user has no session, the the argument ticket is nil
+    !expired?(ticket) || (redirect '/login')
+  end
+
+  # helper functions
+  def expired?(ticket)
+    ticket?(ticket) && (Time.now.to_i - timestamp(ticket) > settings.session_valid_for)
   end
 
   def ticket?(ticket)
-    DB[ticket] # either return a timestamp or nil
+    DB[ticket] || remote_ticket?(ticket)
   end
 
-  def expired?(ticket)
-    Time.now.to_i - ticket?(ticket) > settings.session_valid_for
+  # 4 登陆后需要再次验证时候的接口:
+  # http://sso.server.ip.address/ssoServer/serviceValidate
+  # 登录到 ssoServer 成功后,返回到子系统,拿到 ticket 后,再拿 ticket 到上述接口地
+  # 址去请求一下,以得到对应的用户名。
+  def remote_ticket?(ticket)
+    true # FIXME
+  end
+
+  def timestamp(ticket)
+    DB[ticket].to_i # if DB[ticket] returns nil, convert it to zero, so it can be subtracted in fun expired?
   end
 
   def extend_ticket_time(ticket)
@@ -51,14 +60,10 @@ helpers do
     DB.delete ticket
   end
 
-  def save_ticket(ticket)
-    DB[ticket] = Time.now.to_i
-  end
-
 end
 
-before '/ebooklist/*' do
-  if valid?(session['ticket'])
+before '/*.html' do
+  if valid? session['ticket']
     pass
   else
     redirect '/login'
@@ -66,8 +71,7 @@ before '/ebooklist/*' do
 end
 
 get '/' do
-  "#{DB.to_s}"
-  # redirect '/index.html'
+  redirect '/index.html'
 end
 
 # 1 直接登录 sso 的地址(假设未登录任何子系统,可以直接到本入口地址进行登录,登录后 再自动跳转回指定的子系统)
@@ -76,12 +80,17 @@ end
 # 2)AppId:子系统标识 ID(在 UCenter 中定义每个子系统的 AppId,也是 ssoServer 中的AppId)
 # 3)signData:数据签名(用 MD5 对 service+AppId + 固定的混淆码加密)(本签名非必须)
 get '/login' do
-  'ready to login?'
+  '据说登陆后学习效果更佳！'
   # redirect "http://sso.server.ip.address/ssoServer/login?AppId=kidslib;service:#{settings.site_url}/set;signData=digest_msg"
 end
 
+# 3 退出sso需要调用的接口:
+# http://sso.server.ip.address/ssoServer/logout
+# Sso退出,这个退出调用,是删除调CAS的ticket 各子系统的session需要各子系统自己删除。
 # 暂时没有提供用户logout的地方，也不准备提供。我们可以吧session过期时间设定短一点
+# FIXME: 如何通知sso删除这个ticket？
 get '/logout' do
+  delete_remote_ticket session['ticket']
   session.clear
   redirect '/'
 end
@@ -91,10 +100,17 @@ end
 # 例如:http://xxx/yyy.asp?Ticket=qweury03432432423ktjgj)
 get '/set-session' do
   ticket = params['Ticket']
-  session['ticket'] = ticket
-  save_ticket ticket
-  "#{ticket? ticket}"
-  # redirect to('/')
+  if remote_ticket?(ticket)
+    session['ticket'] = ticket
+    save_ticket ticket
+    redirect '/'
+  else
+    redirect '/login'
+  end
+end
+
+get '/db' do
+  "#{DB.to_s}"
 end
 
 # html中放站点所有html文件，且要保持目录

@@ -1,5 +1,5 @@
 *
 !*.rb
 !*.md
-Rakefile
-doc/*
+!Rakefile
+!doc/*

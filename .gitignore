@@ -1,3 +1,5 @@
 *
 !*.rb
 !*.md
+Rakefile
+doc/*

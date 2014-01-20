@@ -23,9 +23,10 @@ require 'http' # https://github.com/tarcieri/http
 # ## sinatra全局设定
 # URI.encode_www_form([['AppId', 'kidslib'], ['server', 'http://0.0.0.0:4567']])
 configure do
+  # set :bind, '192.168.103.99' # http://stackoverflow.com/questions/16832472/ruby-sinatra-webservice-running-on-localhost4567-but-not-on-ip
   enable :sessions # all request will have session either we set it or rack:session sets it automatically
   set :site_url, 'http://0.0.0.0/'
-  set :session_valid_for, 60 * 1 # 60 minutes
+  set :session_valid_for, 60 * 1 # 60 seconds
   set :sso_server, 'http://218.245.2.174:8080'
 end
 
@@ -63,7 +64,9 @@ helpers do
   # 登录到 ssoServer 成功后,返回到子系统,拿到 ticket 后,再拿 ticket 到上述接口地
   # 址去请求一下,以得到对应的用户名。
   def remote_ticket?(ticket)
-    HTTP.get 'http://218.245.2.174:8080/ssoServer/serviceValidate'
+    #HTTP.get 'http://218.245.2.174:8080/ssoServer/serviceValidate?service=http://0.0.0.0:4567/&ticket=ST-159-qvnQEhEm9wcBjsFBm7HG-ssoServer'
+    true
+    #HTTP.get 'http://218.245.2.174:8080/ssoServer/serviceValidate'
   end
 
   def timestamp(ticket)
@@ -75,7 +78,11 @@ helpers do
   end
 
   def delete_ticket(ticket)
-    DB.delete ticket
+    DB.delete ticket # 本地不需要删除
+  end
+
+  def delete_remote_ticket(ticket)
+    true
   end
 
 end
@@ -103,8 +110,7 @@ end
 # ----
 # ## 登陆
 get '/login' do
-  '据说登陆后学习效果更佳！'
-  redirect 'http://218.245.2.174:8080/ssoServer/login?AppId=kidslib&server=http%3A%2F%2F0.0.0.0%3A4567'
+  redirect 'http://218.245.2.174:8080/ssoServer/login?AppId=kidslib&service=http%3A%2F%2F0.0.0.0%3A4567/set-session'
 end
 
 # ----
@@ -117,20 +123,22 @@ end
 get '/logout' do
   delete_remote_ticket session['ticket']
   session.clear
-  redirect '/'
+  delete_ticket session['ticket']
+  redirect "#{settings.sso_server}/ssoServer/logout?url=kidslib"
 end
 
 # ----
 # ## 设置session
 # 本接口返回的 service 地址后面带的参数:
 # ticket(ticket 会在 service 地址后自动加上,
-# 例如:http://xxx/yyy.asp?Ticket=qweury03432432423ktjgj)
+# 例如:http://xxx/yyy.asp?ticket=qweury03432432423ktjgj)
 get '/set-session' do
-  ticket = params['Ticket']
+  ticket = params['ticket']
   if remote_ticket?(ticket)
     session['ticket'] = ticket
     save_ticket ticket
-    redirect '/'
+    "#{ticket}"
+    #redirect '/'
   else
     redirect '/login'
   end

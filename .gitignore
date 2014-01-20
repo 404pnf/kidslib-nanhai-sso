@@ -2,4 +2,6 @@
 !*.rb
 !*.md
 !Rakefile
-!doc/*
+!doc/*.html
+!*.css
+!*.js

@@ -1,5 +1,6 @@
+# -*- coding: utf-8 -*-
 def mk_db(db)
-  lambda verb = nil, key = nil do
+  -> verb = nil, key = nil do
     extended_time = 60 * 1
     case verb
     when :save
@@ -27,4 +28,4 @@ db.call :save, :key1
 db.call :save, :key2
 db.call :save, :key3
 
-p db.call# called without arguments, returen db content
+db.call # called without arguments, returen db content

@@ -5,7 +5,7 @@ end
 
 desc "run the app"
 task :run do
-  system("ruby server.rb")
+  system("rackup")
 end
 
 desc "genreate docs"

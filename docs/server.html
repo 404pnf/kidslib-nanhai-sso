@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>server.rb</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
+  <link rel="stylesheet" media="all" href="docco.css" />
+</head>
+<body>
+  <div id="container">
+    <div id="background"></div>
+    
+      <ul id="jump_to">
+        <li>
+          <a class="large" href="javascript:void(0);">Jump To &hellip;</a>
+          <a class="small" href="javascript:void(0);">+</a>
+          <div id="jump_wrapper">
+          <div id="jump_page">
+            
+              
+              <a class="source" href="function_as_data.html">
+                function_as_data.rb
+              </a>
+            
+              
+              <a class="source" href="server.html">
+                server.rb
+              </a>
+            
+          </div>
+        </li>
+      </ul>
+    
+    <ul class="sections">
+        
+          <li id="title">
+              <div class="annotation">
+                  <h1>server.rb</h1>
+              </div>
+          </li>
+        
+        
+        
+        <li id="section-1">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-1">&#182;</a>
+              </div>
+              <h2 id="-">依赖</h2>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="keyword">require</span> <span class="string">'sinatra'</span>
+<span class="keyword">require</span> <span class="string">'rexml'</span> <span class="comment"># because it's in the std lib</span>
+<span class="keyword">require</span> <span class="string">'http'</span> <span class="comment"># https://github.com/tarcieri/http</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-2">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-2">&#182;</a>
+              </div>
+              <hr>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-3">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-3">&#182;</a>
+              </div>
+              <h2 id="-">如何使用</h2>
+<pre><code> ruby server.rb
+</code></pre><p>站点会运行在 <a href="http://localhost:4567">http://localhost:4567</a></p>
+<h2 id="-">整体思路说明</h2>
+<ol>
+<li>第一次验证通过后，我们需要把验证信息对应用户在本地存一下，并设定过期时间</li>
+<li>这个信息用cookie的形式让用户也存着</li>
+<li>如果过期了，我们要求用户再去验证，如果没有过期.就继续允许用户访问</li>
+<li>由于kidslib网站没有任何地方让用户个性化和保存个人设置，
+因此我们根本不需要得到用户名等信息。
+只需确保ticket没有过期。</li>
+<li>每次用户访问一个页面，在本地的db中延长一下ticket过期时间</li>
+</ol>
+<hr>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-4">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-4">&#182;</a>
+              </div>
+              <h2 id="sinatra-">sinatra全局设定</h2>
+<p>URI.encode_www_form([[&#39;AppId&#39;, &#39;kidslib&#39;], [&#39;server&#39;, &#39;<a href="http://0.0.0.0:4567">http://0.0.0.0:4567</a>&#39;]])</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>configure <span class="keyword">do</span>
+  enable <span class="symbol">:sessions</span> <span class="comment"># all request will have session either we set it or rack:session sets it automatically</span>
+  set <span class="symbol">:site_url</span>, <span class="string">'http://0.0.0.0/'</span>
+  set <span class="symbol">:session_valid_for</span>, <span class="number">60</span> * <span class="number">1</span> <span class="comment"># 60 minutes</span>
+  set <span class="symbol">:sso_server</span>, <span class="string">'http://218.245.2.174:8080'</span>
+<span class="keyword">end</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-5">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-5">&#182;</a>
+              </div>
+              <hr>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-6">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-6">&#182;</a>
+              </div>
+              <h2 id="-">帮助函数</h2>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>helpers <span class="keyword">do</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-7">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-7">&#182;</a>
+              </div>
+              <p>单线程跑这个程序，内存中就会持久化这个DB
+之前测试不行是因为每次请求 shotgun 都重新载入这个文件</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  <span class="constant">DB</span> = {}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-8">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-8">&#182;</a>
+              </div>
+              <hr>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-9">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-9">&#182;</a>
+              </div>
+              <p>interface呗。程序中直接调用只有interface这两个函数</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  <span class="function"><span class="keyword">def</span> <span class="title">save_ticket</span><span class="params">(ticket)</span></span>
+    <span class="constant">DB</span>[ticket] = <span class="constant">Time</span>.now.to_i
+  <span class="keyword">end</span>
+
+  <span class="function"><span class="keyword">def</span> <span class="title">valid?</span><span class="params">(ticket)</span></span>
+    !expired?(ticket) || (redirect <span class="string">'/login'</span>)
+  <span class="keyword">end</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-10">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-10">&#182;</a>
+              </div>
+              <hr>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-11">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-11">&#182;</a>
+              </div>
+              <p>helper functions</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  <span class="function"><span class="keyword">def</span> <span class="title">expired?</span><span class="params">(ticket)</span></span>
+    ticket?(ticket) &amp;&amp; (<span class="constant">Time</span>.now.to_i - timestamp(ticket) &gt; settings.session_valid_for)
+  <span class="keyword">end</span>
+
+  <span class="function"><span class="keyword">def</span> <span class="title">ticket?</span><span class="params">(ticket)</span></span>
+    <span class="constant">DB</span>[ticket] || remote_ticket?(ticket)
+  <span class="keyword">end</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-12">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-12">&#182;</a>
+              </div>
+              <hr>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-13">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-13">&#182;</a>
+              </div>
+              <p>4 登陆后需要再次验证时候的接口:
+<a href="http://sso.server.ip.address/ssoServer/serviceValidate">http://sso.server.ip.address/ssoServer/serviceValidate</a>
+登录到 ssoServer 成功后,返回到子系统,拿到 ticket 后,再拿 ticket 到上述接口地
+址去请求一下,以得到对应的用户名。</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  <span class="function"><span class="keyword">def</span> <span class="title">remote_ticket?</span><span class="params">(ticket)</span></span>
+    <span class="constant">HTTP</span>.get <span class="string">'http://218.245.2.174:8080/ssoServer/serviceValidate'</span>
+  <span class="keyword">end</span>
+
+  <span class="function"><span class="keyword">def</span> <span class="title">timestamp</span><span class="params">(ticket)</span></span>
+    <span class="constant">DB</span>[ticket].to_i <span class="comment"># 如果 DB[ticket] 的值是 nil，会转为数字0，好让 expired? 函数做时间上的加减。</span>
+  <span class="keyword">end</span>
+
+  <span class="function"><span class="keyword">def</span> <span class="title">extend_ticket_time</span><span class="params">(ticket)</span></span>
+    <span class="constant">DB</span>[ticket] = <span class="constant">Time</span>.now.to_i + settings.session_valid_for
+  <span class="keyword">end</span>
+
+  <span class="function"><span class="keyword">def</span> <span class="title">delete_ticket</span><span class="params">(ticket)</span></span>
+    <span class="constant">DB</span>.delete ticket
+  <span class="keyword">end</span>
+
+<span class="keyword">end</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-14">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-14">&#182;</a>
+              </div>
+              <hr>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-15">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-15">&#182;</a>
+              </div>
+              <h2 id="before-filter">before filter</h2>
+<p>会运行在所有请求前
+静态文件除外！！
+这是sinatra源码中写死的。符合逻辑。可惜我正好不希望这样
+因此后面采取了些非常规手段 ；）</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>before <span class="string">'/*.html'</span> <span class="keyword">do</span>
+  <span class="keyword">if</span> valid? session[<span class="string">'ticket'</span>]
+    pass
+  <span class="keyword">else</span>
+    redirect <span class="string">'/login'</span>
+  <span class="keyword">end</span>
+<span class="keyword">end</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-16">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-16">&#182;</a>
+              </div>
+              <hr>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-17">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-17">&#182;</a>
+              </div>
+              <h2 id="-http-verb">路径 + HTTP VERB</h2>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>get <span class="string">'/'</span> <span class="keyword">do</span>
+  redirect <span class="string">'/index.html'</span>
+<span class="keyword">end</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-18">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-18">&#182;</a>
+              </div>
+              <hr>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-19">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-19">&#182;</a>
+              </div>
+              <h2 id="-">登陆</h2>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>get <span class="string">'/login'</span> <span class="keyword">do</span>
+  <span class="string">'据说登陆后学习效果更佳！'</span>
+  redirect <span class="string">'http://218.245.2.174:8080/ssoServer/login?AppId=kidslib&amp;server=http%3A%2F%2F0.0.0.0%3A4567'</span>
+<span class="keyword">end</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-20">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-20">&#182;</a>
+              </div>
+              <hr>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-21">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-21">&#182;</a>
+              </div>
+              <h2 id="-">登出</h2>
+<p>3 退出sso需要调用的接口:
+<a href="http://218.245.2.174:8080/nanhai/singleLogout">http://218.245.2.174:8080/nanhai/singleLogout</a>
+Sso退出,这个退出调用,是删除调CAS的ticket 各子系统的session需要各子系统自己删除。
+暂时没有提供用户logout的地方，也不准备提供。我们可以吧session过期时间设定短一点
+FIXME: 如何通知sso删除这个ticket？</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>get <span class="string">'/logout'</span> <span class="keyword">do</span>
+  delete_remote_ticket session[<span class="string">'ticket'</span>]
+  session.clear
+  redirect <span class="string">'/'</span>
+<span class="keyword">end</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-22">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-22">&#182;</a>
+              </div>
+              <hr>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-23">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-23">&#182;</a>
+              </div>
+              <h2 id="-session">设置session</h2>
+<p>本接口返回的 service 地址后面带的参数:
+ticket(ticket 会在 service 地址后自动加上,
+例如:<a href="http://xxx/yyy.asp?Ticket=qweury03432432423ktjgj">http://xxx/yyy.asp?Ticket=qweury03432432423ktjgj</a>)</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>get <span class="string">'/set-session'</span> <span class="keyword">do</span>
+  ticket = params[<span class="string">'Ticket'</span>]
+  <span class="keyword">if</span> remote_ticket?(ticket)
+    session[<span class="string">'ticket'</span>] = ticket
+    save_ticket ticket
+    redirect <span class="string">'/'</span>
+  <span class="keyword">else</span>
+    redirect <span class="string">'/login'</span>
+  <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+get <span class="string">'/db'</span> <span class="keyword">do</span>
+  <span class="string">"<span class="subst">#{<span class="constant">DB</span>.to_s}</span>"</span>
+<span class="keyword">end</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-24">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-24">&#182;</a>
+              </div>
+              <hr>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-25">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-25">&#182;</a>
+              </div>
+              <h2 id="-html-">需要保护的html文件</h2>
+<ol>
+<li>将要保护的html文件 从 public 目录移到与 server.rb 平行的html目录</li>
+<li>且要保持目录</li>
+</ol>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>get <span class="string">'/*'</span> <span class="keyword">do</span> |path|
+  <span class="keyword">begin</span>
+    <span class="constant">File</span>.read <span class="string">"html/<span class="subst">#{path}</span>"</span>
+  <span class="keyword">rescue</span>
+    <span class="string">'你找谁？没这人啊！'</span>
+  <span class="keyword">end</span>
+<span class="keyword">end</span></pre></div></div>
+            
+        </li>
+        
+    </ul>
+  </div>
+</body>
+</html>

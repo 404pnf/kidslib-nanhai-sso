@@ -1,7 +1,2 @@
-*
-!*.rb
-!*.md
-!Rakefile
-!doc/*.html
-!*.css
-!*.js
+public/*
+html/*

@@ -4,9 +4,9 @@ require 'http' # https://github.com/tarcieri/http
 # ----
 # ## 如何使用
 #
-#      rackup -p 4567
+#      rackup
 #
-# 站点会运行在 http://localhost:4567
+# 站点会运行在 http://localhost:9292
 
 # ----
 # ## 整体思路说明
@@ -23,7 +23,7 @@ configure do
   # set :bind, '192.168.103.99' # http://stackoverflow.com/questions/16832472/ruby-sinatra-webservice-running-on-localhost4567-but-not-on-ip
   enable :sessions # all request will have session either we set it or rack:session sets it automatically
   set :site_url, 'http://0.0.0.0:9292'
-  set :session_valid_for, 60 * 10 # 单位是秒
+  set :session_valid_for, 60 * 1 # 单位是秒
   set :sso_server, 'http://218.245.2.174:8080/ssoServer'
   set :app_id, 'kidslib'
 end
@@ -43,17 +43,28 @@ helpers do
   end
 
   def valid?(ticket)
-    !expired?(ticket) || (redirect '/login')
+    valid_ticket? (ticket) || (redirect '/login')
+  end
+
+  def delete_ticket(ticket)
+    DB.delete ticket
   end
 
   # ----
   # 帮助函数
-  def expired?(ticket)
-    ticket?(ticket) && (Time.now.to_i - timestamp(ticket) > settings.session_valid_for)
+
+  def valid_ticket?(ticket)
+    # 本地或者cas服务器上有ticket有效。因为我本地设定的过期时间很可能比cas上短
+    if not_expired(ticket) || remote_ticket?(ticket)
+      extend_ticket_time(ticket)
+      true
+    else
+      false
+    end
   end
 
-  def ticket?(ticket)
-    DB[ticket] || remote_ticket?(ticket)
+  def not_expired(ticket)
+    Time.now.to_i - timestamp(ticket) > settings.session_valid_for
   end
 
   # ----
@@ -61,20 +72,17 @@ helpers do
   # http://sso.server.ip.address/ssoServer/serviceValidate
   # 需要参数是 service 和  ticket
   def remote_ticket?(ticket)
-    true
-    #HTTP.get "#{settings.sso_server}/serviceValidate"
+    #true
+    r = HTTP.get "#{settings.sso_server}/serviceValidate?service=#{settings.site_url}/set-session&ticket=#{ticket}"
+    !!r.to_s['cas:authenticationSuccess']
   end
 
   def timestamp(ticket)
-    DB[ticket].to_i # 如果 DB[ticket] 的值是 nil，会转为数字0，好让 expired? 函数做时间上的加减。
+    DB[ticket].to_i # 如果 DB[ticket] 的值是 nil，会转为数字0，好让其它函数做时间上的加减。
   end
 
   def extend_ticket_time(ticket)
     DB[ticket] = Time.now.to_i + settings.session_valid_for
-  end
-
-  def delete_ticket(ticket)
-    DB.delete ticket # 本地不需要删除
   end
 
 end # 帮助函数结束
@@ -110,7 +118,7 @@ get '/set-session' do
     session['ticket'] = ticket
     save_ticket ticket
     "#{ticket}"
-    #redirect '/'
+    # redirect '/'
   else
     redirect '/login'
   end

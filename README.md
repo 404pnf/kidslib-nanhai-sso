@@ -1,6 +1,19 @@
 nanhai-sso
 ==========
 
+# 安装ruby环境和需要的ruby gems
+
+     ./INSTALL_DEPENDENCIES.sh
+
+# 运行程序
+
+    ./start.sh # 如果希望在后台郧西不过你 ./run.sh &
+
+# 停止程序 
+
+    ./stop.sh 
+
+# 遇到的问题
 sinatra中到的before filer对public目录中的静态文件不起作用。 sinatra源码中
 
 dispatch方法定义中statck!在filter!前面
@@ -28,7 +41,7 @@ https://github.com/sinatra/sinatra/issues/761#issuecomment-31435059
 你能帮帮我么？
 
 
-## 直接将session信息存到内存的hash中
+# 直接将session信息存到内存的hash中
 
 之前不成功是因为开发时用shotgun，每次访问页面都重载整个rb文件，因此，内存中的db每次都重新被初始化，自然只能记住最后一次的结果。
 

@@ -7,7 +7,7 @@ nanhai-sso
 
 # 运行程序
 
-    ./start.sh # 如果希望在后台郧西不过你 ./run.sh &
+    ./start.sh # 如果希望在后台 ./run.sh &
 
 # 停止程序 
 

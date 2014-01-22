@@ -48,11 +48,12 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-1">&#182;</a>
               </div>
-              
+              <p>-<em>- coding: utf-8 -</em>-</p>
+
             </div>
             
             <div class="content"><div class='highlight'><pre><span class="function"><span class="keyword">def</span> <span class="title">mk_db</span><span class="params">(db)</span></span>
-  -&gt; verb=<span class="keyword">nil</span>, key=<span class="keyword">nil</span> <span class="keyword">do</span>
+  -&gt; verb = <span class="keyword">nil</span>, key = <span class="keyword">nil</span> <span class="keyword">do</span>
     extended_time = <span class="number">60</span> * <span class="number">1</span>
     <span class="keyword">case</span> verb
     <span class="keyword">when</span> <span class="symbol">:save</span>
@@ -80,7 +81,7 @@ db.call <span class="symbol">:save</span>, <span class="symbol">:key1</span>
 db.call <span class="symbol">:save</span>, <span class="symbol">:key2</span>
 db.call <span class="symbol">:save</span>, <span class="symbol">:key3</span>
 
-p db.() <span class="comment"># called without arguments, returen db content</span></pre></div></div>
+db.call <span class="comment"># called without arguments, returen db content</span></pre></div></div>
             
         </li>
         

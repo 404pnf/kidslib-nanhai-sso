@@ -48,12 +48,10 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-1">&#182;</a>
               </div>
-              <h2 id="-">依赖</h2>
-
+              
             </div>
             
             <div class="content"><div class='highlight'><pre><span class="keyword">require</span> <span class="string">'sinatra'</span>
-<span class="keyword">require</span> <span class="string">'rexml'</span> <span class="comment"># because it's in the std lib</span>
 <span class="keyword">require</span> <span class="string">'http'</span> <span class="comment"># https://github.com/tarcieri/http</span></pre></div></div>
             
         </li>
@@ -79,18 +77,8 @@
                 <a class="pilcrow" href="#section-3">&#182;</a>
               </div>
               <h2 id="-">如何使用</h2>
-<pre><code> ruby server.rb
-</code></pre><p>站点会运行在 <a href="http://localhost:4567">http://localhost:4567</a></p>
-<h2 id="-">整体思路说明</h2>
-<ol>
-<li>第一次验证通过后，我们需要把验证信息对应用户在本地存一下，并设定过期时间</li>
-<li>这个信息用cookie的形式让用户也存着</li>
-<li>如果过期了，我们要求用户再去验证，如果没有过期.就继续允许用户访问</li>
-<li>由于kidslib网站没有任何地方让用户个性化和保存个人设置，
-因此我们根本不需要得到用户名等信息。
-只需确保ticket没有过期。</li>
-<li>每次用户访问一个页面，在本地的db中延长一下ticket过期时间</li>
-</ol>
+<pre><code> rackup
+</code></pre><p>站点会运行在 <a href="http://localhost:9292">http://localhost:9292</a></p>
 <hr>
 
             </div>
@@ -104,17 +92,17 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-4">&#182;</a>
               </div>
-              <h2 id="sinatra-">sinatra全局设定</h2>
-<p>URI.encode_www_form([[&#39;AppId&#39;, &#39;kidslib&#39;], [&#39;server&#39;, &#39;<a href="http://0.0.0.0:4567">http://0.0.0.0:4567</a>&#39;]])</p>
+              <h2 id="-">整体思路说明</h2>
+<ol>
+<li>第一次验证通过后，我们需要把验证信息对应用户在本地存一下，并设定过期时间</li>
+<li>这个信息用cookie的形式让用户也存着</li>
+<li>如果过期了，我们要求用户再去验证，如果没有过期.就继续允许用户访问</li>
+<li>由于kidslib网站没有任何地方让用户个性化和保存个人设置，因此我们根本不需要得到用户名等信息。只需确保ticket没有过期。</li>
+<li>每次用户访问一个页面，在本地的db中延长一下ticket过期时间</li>
+</ol>
+<hr>
 
             </div>
-            
-            <div class="content"><div class='highlight'><pre>configure <span class="keyword">do</span>
-  enable <span class="symbol">:sessions</span> <span class="comment"># all request will have session either we set it or rack:session sets it automatically</span>
-  set <span class="symbol">:site_url</span>, <span class="string">'http://0.0.0.0/'</span>
-  set <span class="symbol">:session_valid_for</span>, <span class="number">60</span> * <span class="number">1</span> <span class="comment"># 60 minutes</span>
-  set <span class="symbol">:sso_server</span>, <span class="string">'http://218.245.2.174:8080'</span>
-<span class="keyword">end</span></pre></div></div>
             
         </li>
         
@@ -125,9 +113,12 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-5">&#182;</a>
               </div>
-              <hr>
+              <h2 id="sinatra-">sinatra全局设定</h2>
+<p>URI.encode_www_form([[&#39;AppId&#39;, &#39;kidslib&#39;], [&#39;server&#39;, &#39;<a href="http://0.0.0.0:4567">http://0.0.0.0:4567</a>&#39;]])</p>
 
             </div>
+            
+            <div class="content"><div class='highlight'><pre>configure <span class="keyword">do</span></pre></div></div>
             
         </li>
         
@@ -138,11 +129,16 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-6">&#182;</a>
               </div>
-              <h2 id="-">帮助函数</h2>
+              <p>set :bind, &#39;192.168.103.99&#39; # <a href="http://stackoverflow.com/questions/16832472/ruby-sinatra-webservice-running-on-localhost4567-but-not-on-ip">http://stackoverflow.com/questions/16832472/ruby-sinatra-webservice-running-on-localhost4567-but-not-on-ip</a></p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>helpers <span class="keyword">do</span></pre></div></div>
+            <div class="content"><div class='highlight'><pre>  enable <span class="symbol">:sessions</span> <span class="comment"># all request will have session either we set it or rack:session sets it automatically</span>
+  set <span class="symbol">:site_url</span>, <span class="string">'http://0.0.0.0:9292'</span>
+  set <span class="symbol">:session_valid_for</span>, <span class="number">60</span> * <span class="number">1</span> <span class="comment"># 单位是秒</span>
+  set <span class="symbol">:sso_server</span>, <span class="string">'http://218.245.2.174:8080/ssoServer'</span>
+  set <span class="symbol">:app_id</span>, <span class="string">'kidslib'</span>
+<span class="keyword">end</span></pre></div></div>
             
         </li>
         
@@ -153,12 +149,9 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-7">&#182;</a>
               </div>
-              <p>单线程跑这个程序，内存中就会持久化这个DB
-之前测试不行是因为每次请求 shotgun 都重新载入这个文件</p>
+              <hr>
 
             </div>
-            
-            <div class="content"><div class='highlight'><pre>  <span class="constant">DB</span> = {}</pre></div></div>
             
         </li>
         
@@ -169,9 +162,11 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-8">&#182;</a>
               </div>
-              <hr>
+              <h2 id="-">站点帮助函数</h2>
 
             </div>
+            
+            <div class="content"><div class='highlight'><pre>helpers <span class="keyword">do</span></pre></div></div>
             
         </li>
         
@@ -182,17 +177,12 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-9">&#182;</a>
               </div>
-              <p>interface呗。程序中直接调用只有interface这两个函数</p>
+              <p>单线程跑这个程序，内存中就会持久化这个DB
+之前测试不行是因为每次请求 shotgun 都重新载入这个文件</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  <span class="function"><span class="keyword">def</span> <span class="title">save_ticket</span><span class="params">(ticket)</span></span>
-    <span class="constant">DB</span>[ticket] = <span class="constant">Time</span>.now.to_i
-  <span class="keyword">end</span>
-
-  <span class="function"><span class="keyword">def</span> <span class="title">valid?</span><span class="params">(ticket)</span></span>
-    !expired?(ticket) || (redirect <span class="string">'/login'</span>)
-  <span class="keyword">end</span></pre></div></div>
+            <div class="content"><div class='highlight'><pre>  <span class="constant">DB</span> = {}</pre></div></div>
             
         </li>
         
@@ -216,16 +206,20 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-11">&#182;</a>
               </div>
-              <p>helper functions</p>
+              <p>对外暴露的函数</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  <span class="function"><span class="keyword">def</span> <span class="title">expired?</span><span class="params">(ticket)</span></span>
-    ticket?(ticket) &amp;&amp; (<span class="constant">Time</span>.now.to_i - timestamp(ticket) &gt; settings.session_valid_for)
+            <div class="content"><div class='highlight'><pre>  <span class="function"><span class="keyword">def</span> <span class="title">save_ticket</span><span class="params">(ticket)</span></span>
+    <span class="constant">DB</span>[ticket] = <span class="constant">Time</span>.now.to_i
   <span class="keyword">end</span>
 
-  <span class="function"><span class="keyword">def</span> <span class="title">ticket?</span><span class="params">(ticket)</span></span>
-    <span class="constant">DB</span>[ticket] || remote_ticket?(ticket)
+  <span class="function"><span class="keyword">def</span> <span class="title">valid?</span><span class="params">(ticket)</span></span>
+    valid_ticket? (ticket) || (redirect <span class="string">'/login'</span>)
+  <span class="keyword">end</span>
+
+  <span class="function"><span class="keyword">def</span> <span class="title">delete_ticket</span><span class="params">(ticket)</span></span>
+    <span class="constant">DB</span>.delete ticket
   <span class="keyword">end</span></pre></div></div>
             
         </li>
@@ -250,30 +244,11 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-13">&#182;</a>
               </div>
-              <p>4 登陆后需要再次验证时候的接口:
-<a href="http://sso.server.ip.address/ssoServer/serviceValidate">http://sso.server.ip.address/ssoServer/serviceValidate</a>
-登录到 ssoServer 成功后,返回到子系统,拿到 ticket 后,再拿 ticket 到上述接口地
-址去请求一下,以得到对应的用户名。</p>
+              <p>帮助函数</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  <span class="function"><span class="keyword">def</span> <span class="title">remote_ticket?</span><span class="params">(ticket)</span></span>
-    <span class="constant">HTTP</span>.get <span class="string">'http://218.245.2.174:8080/ssoServer/serviceValidate'</span>
-  <span class="keyword">end</span>
-
-  <span class="function"><span class="keyword">def</span> <span class="title">timestamp</span><span class="params">(ticket)</span></span>
-    <span class="constant">DB</span>[ticket].to_i <span class="comment"># 如果 DB[ticket] 的值是 nil，会转为数字0，好让 expired? 函数做时间上的加减。</span>
-  <span class="keyword">end</span>
-
-  <span class="function"><span class="keyword">def</span> <span class="title">extend_ticket_time</span><span class="params">(ticket)</span></span>
-    <span class="constant">DB</span>[ticket] = <span class="constant">Time</span>.now.to_i + settings.session_valid_for
-  <span class="keyword">end</span>
-
-  <span class="function"><span class="keyword">def</span> <span class="title">delete_ticket</span><span class="params">(ticket)</span></span>
-    <span class="constant">DB</span>.delete ticket
-  <span class="keyword">end</span>
-
-<span class="keyword">end</span></pre></div></div>
+            <div class="content"><div class='highlight'><pre>  <span class="function"><span class="keyword">def</span> <span class="title">valid_ticket?</span><span class="params">(ticket)</span></span></pre></div></div>
             
         </li>
         
@@ -284,9 +259,21 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-14">&#182;</a>
               </div>
-              <hr>
+              <p>本地或者cas服务器上有ticket有效。因为我本地设定的过期时间很可能比cas上短</p>
 
             </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="keyword">if</span> not_expired(ticket) || remote_ticket?(ticket)
+      extend_ticket_time(ticket)
+      <span class="keyword">true</span>
+    <span class="keyword">else</span>
+      <span class="keyword">false</span>
+    <span class="keyword">end</span>
+  <span class="keyword">end</span>
+
+  <span class="function"><span class="keyword">def</span> <span class="title">not_expired</span><span class="params">(ticket)</span></span>
+    <span class="constant">Time</span>.now.to_i - timestamp(ticket) &gt; settings.session_valid_for
+  <span class="keyword">end</span></pre></div></div>
             
         </li>
         
@@ -297,21 +284,9 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-15">&#182;</a>
               </div>
-              <h2 id="before-filter">before filter</h2>
-<p>会运行在所有请求前
-静态文件除外！！
-这是sinatra源码中写死的。符合逻辑。可惜我正好不希望这样
-因此后面采取了些非常规手段 ；）</p>
+              <hr>
 
             </div>
-            
-            <div class="content"><div class='highlight'><pre>before <span class="string">'/*.html'</span> <span class="keyword">do</span>
-  <span class="keyword">if</span> valid? session[<span class="string">'ticket'</span>]
-    pass
-  <span class="keyword">else</span>
-    redirect <span class="string">'/login'</span>
-  <span class="keyword">end</span>
-<span class="keyword">end</span></pre></div></div>
             
         </li>
         
@@ -322,9 +297,13 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-16">&#182;</a>
               </div>
-              <hr>
+              <p>验证ticket
+<a href="http://sso.server.ip.address/ssoServer/serviceValidate">http://sso.server.ip.address/ssoServer/serviceValidate</a>
+需要参数是 service 和  ticket</p>
 
             </div>
+            
+            <div class="content"><div class='highlight'><pre>  <span class="function"><span class="keyword">def</span> <span class="title">remote_ticket?</span><span class="params">(ticket)</span></span></pre></div></div>
             
         </li>
         
@@ -335,12 +314,43 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-17">&#182;</a>
               </div>
-              <h2 id="-http-verb">路径 + HTTP VERB</h2>
+              <p>true</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>get <span class="string">'/'</span> <span class="keyword">do</span>
+            <div class="content"><div class='highlight'><pre>    r = <span class="constant">HTTP</span>.get <span class="string">"<span class="subst">#{settings.sso_server}</span>/serviceValidate?service=<span class="subst">#{settings.site_url}</span>/set-session&amp;ticket=<span class="subst">#{ticket}</span>"</span>
+    !!r.to_s[<span class="string">'cas:authenticationSuccess'</span>]
+  <span class="keyword">end</span>
+
+  <span class="function"><span class="keyword">def</span> <span class="title">timestamp</span><span class="params">(ticket)</span></span>
+    <span class="constant">DB</span>[ticket].to_i <span class="comment"># 如果 DB[ticket] 的值是 nil，会转为数字0，好让其它函数做时间上的加减。</span>
+  <span class="keyword">end</span>
+
+  <span class="function"><span class="keyword">def</span> <span class="title">extend_ticket_time</span><span class="params">(ticket)</span></span>
+    <span class="constant">DB</span>[ticket] = <span class="constant">Time</span>.now.to_i + settings.session_valid_for
+  <span class="keyword">end</span>
+
+<span class="keyword">end</span> <span class="comment"># 帮助函数结束</span>
+
+before <span class="string">'/*.html'</span> <span class="keyword">do</span>
+  <span class="keyword">if</span> valid? session[<span class="string">'ticket'</span>]
+    pass
+  <span class="keyword">else</span>
+    redirect <span class="string">'/login'</span>
+  <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+get <span class="string">'/'</span> <span class="keyword">do</span>
   redirect <span class="string">'/index.html'</span>
+<span class="keyword">end</span>
+
+get <span class="string">'/login'</span> <span class="keyword">do</span>
+  redirect <span class="string">"<span class="subst">#{settings.sso_server}</span>/login?AppId=<span class="subst">#{settings.app_id}</span>&amp;service=<span class="subst">#{settings.site_url}</span>/set-session"</span>
+<span class="keyword">end</span>
+
+get <span class="string">'/logout'</span> <span class="keyword">do</span>
+  delete_ticket session[<span class="string">'ticket'</span>] &amp;&amp; session.clear
+  redirect <span class="string">"<span class="subst">#{settings.sso_server}</span>/logout?url=kidslib"</span>
 <span class="keyword">end</span></pre></div></div>
             
         </li>
@@ -365,14 +375,18 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-19">&#182;</a>
               </div>
-              <h2 id="-">登陆</h2>
+              <h2 id="-session">设置session</h2>
+<p>登陆service在正常登陆后会在返回地址带上ticket
+例如:<a href="http://xxx/yyy.asp?ticket=qweury03432432423ktjgj">http://xxx/yyy.asp?ticket=qweury03432432423ktjgj</a>)</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>get <span class="string">'/login'</span> <span class="keyword">do</span>
-  <span class="string">'据说登陆后学习效果更佳！'</span>
-  redirect <span class="string">'http://218.245.2.174:8080/ssoServer/login?AppId=kidslib&amp;server=http%3A%2F%2F0.0.0.0%3A4567'</span>
-<span class="keyword">end</span></pre></div></div>
+            <div class="content"><div class='highlight'><pre>get <span class="string">'/set-session'</span> <span class="keyword">do</span>
+  ticket = params[<span class="string">'ticket'</span>]
+  <span class="keyword">if</span> remote_ticket? ticket
+    session[<span class="string">'ticket'</span>] = ticket
+    save_ticket ticket
+    <span class="string">"<span class="subst">#{ticket}</span>"</span></pre></div></div>
             
         </li>
         
@@ -383,70 +397,11 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-20">&#182;</a>
               </div>
-              <hr>
+              <p>redirect &#39;/&#39;</p>
 
             </div>
             
-        </li>
-        
-        
-        <li id="section-21">
-            <div class="annotation">
-              
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-21">&#182;</a>
-              </div>
-              <h2 id="-">登出</h2>
-<p>3 退出sso需要调用的接口:
-<a href="http://218.245.2.174:8080/nanhai/singleLogout">http://218.245.2.174:8080/nanhai/singleLogout</a>
-Sso退出,这个退出调用,是删除调CAS的ticket 各子系统的session需要各子系统自己删除。
-暂时没有提供用户logout的地方，也不准备提供。我们可以吧session过期时间设定短一点
-FIXME: 如何通知sso删除这个ticket？</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>get <span class="string">'/logout'</span> <span class="keyword">do</span>
-  delete_remote_ticket session[<span class="string">'ticket'</span>]
-  session.clear
-  redirect <span class="string">'/'</span>
-<span class="keyword">end</span></pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-22">
-            <div class="annotation">
-              
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-22">&#182;</a>
-              </div>
-              <hr>
-
-            </div>
-            
-        </li>
-        
-        
-        <li id="section-23">
-            <div class="annotation">
-              
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-23">&#182;</a>
-              </div>
-              <h2 id="-session">设置session</h2>
-<p>本接口返回的 service 地址后面带的参数:
-ticket(ticket 会在 service 地址后自动加上,
-例如:<a href="http://xxx/yyy.asp?Ticket=qweury03432432423ktjgj">http://xxx/yyy.asp?Ticket=qweury03432432423ktjgj</a>)</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>get <span class="string">'/set-session'</span> <span class="keyword">do</span>
-  ticket = params[<span class="string">'Ticket'</span>]
-  <span class="keyword">if</span> remote_ticket?(ticket)
-    session[<span class="string">'ticket'</span>] = ticket
-    save_ticket ticket
-    redirect <span class="string">'/'</span>
-  <span class="keyword">else</span>
+            <div class="content"><div class='highlight'><pre>  <span class="keyword">else</span>
     redirect <span class="string">'/login'</span>
   <span class="keyword">end</span>
 <span class="keyword">end</span>
@@ -458,11 +413,11 @@ get <span class="string">'/db'</span> <span class="keyword">do</span>
         </li>
         
         
-        <li id="section-24">
+        <li id="section-21">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-24">&#182;</a>
+                <a class="pilcrow" href="#section-21">&#182;</a>
               </div>
               <hr>
 
@@ -471,11 +426,11 @@ get <span class="string">'/db'</span> <span class="keyword">do</span>
         </li>
         
         
-        <li id="section-25">
+        <li id="section-22">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-25">&#182;</a>
+                <a class="pilcrow" href="#section-22">&#182;</a>
               </div>
               <h2 id="-html-">需要保护的html文件</h2>
 <ol>
@@ -489,7 +444,7 @@ get <span class="string">'/db'</span> <span class="keyword">do</span>
   <span class="keyword">begin</span>
     <span class="constant">File</span>.read <span class="string">"html/<span class="subst">#{path}</span>"</span>
   <span class="keyword">rescue</span>
-    <span class="string">'你找谁？没这人啊！'</span>
+    <span class="string">'没找到请求的资源。试试其它的？'</span>
   <span class="keyword">end</span>
 <span class="keyword">end</span></pre></div></div>
             

@@ -1,6 +1,6 @@
 require 'sinatra'
 require 'http' # https://github.com/tarcieri/http
-
+require 'uri'
 # ----
 # ## 如何使用
 #
@@ -22,7 +22,8 @@ require 'http' # https://github.com/tarcieri/http
 configure do
   # set :bind, '192.168.103.99' # http://stackoverflow.com/questions/16832472/ruby-sinatra-webservice-running-on-localhost4567-but-not-on-ip
   enable :sessions # all request will have session either we set it or rack:session sets it automatically
-  set :site_url, 'http://0.0.0.0:9292'
+  #set :site_url, 'http://0.0.0.0:9292'
+  set :site_url, 'http://218.247.244.23:9292'
   set :session_valid_for, 60 * 1 # 单位是秒
   set :sso_server, 'http://218.245.2.174:8080/ssoServer'
   set :app_id, 'kidslib'
@@ -74,6 +75,7 @@ helpers do
   def remote_ticket?(ticket)
     #true
     r = HTTP.get "#{settings.sso_server}/serviceValidate?service=#{settings.site_url}/set-session&ticket=#{ticket}"
+    #r = HTTP.get "#{settings.sso_server}/serviceValidate?service=http%3A%2F%2F192.168.23.252:9292%2Fset-session&ticket=#{ticket}"
     !!r.to_s['cas:authenticationSuccess']
   end
 
@@ -101,11 +103,12 @@ end
 
 get '/login' do
   redirect "#{settings.sso_server}/login?AppId=#{settings.app_id}&service=#{settings.site_url}/set-session"
+  #redirect "#{settings.sso_server}/login?AppId=#{settings.app_id}&service=http%3A%2F%2F192.168.23.252:9292%2Fset-session"
 end
 
 get '/logout' do
   delete_ticket session['ticket'] && session.clear
-  redirect "#{settings.sso_server}/logout?url=kidslib"
+  redirect "#{settings.sso_server}/logout?service==#{settings.site_url}"
 end
 
 # ----
@@ -117,7 +120,10 @@ get '/set-session' do
   if remote_ticket? ticket
     session['ticket'] = ticket
     save_ticket ticket
-    "#{ticket}"
+    status = remote_ticket?(ticket)
+    r = HTTP.get "#{settings.sso_server}/serviceValidate?service=#{settings.site_url}/set-session&ticket=#{ticket}"
+    #{}"#{r}"
+    "#{ticket}, #{status}, #{r}"
     # redirect '/'
   else
     redirect '/login'

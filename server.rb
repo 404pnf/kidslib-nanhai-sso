@@ -1,6 +1,7 @@
 require 'sinatra'
 require 'http' # https://github.com/tarcieri/http
 require 'uri'
+
 # ----
 # ## 如何使用
 #
@@ -15,18 +16,12 @@ require 'uri'
 # 3. 如果过期了，我们要求用户再去验证，如果没有过期.就继续允许用户访问
 # 4. 由于kidslib网站没有任何地方让用户个性化和保存个人设置，因此我们根本不需要得到用户名等信息。只需确保ticket没有过期。
 # 5. 每次用户访问一个页面，在本地的db中延长一下ticket过期时间
+# 6. 将要保护的html文件 从 public 目录移到与 server.rb 平行的html目录，且要保持目录
+# 7. 在sinatra中对匹配html的路径做限制
 
-# ----
-# ## sinatra全局设定
-# URI.encode_www_form([['AppId', 'kidslib'], ['server', 'http://0.0.0.0:4567']])
 configure do
   # set :bind, '192.168.103.99' # http://stackoverflow.com/questions/16832472/ruby-sinatra-webservice-running-on-localhost4567-but-not-on-ip
   enable :sessions # all request will have session either we set it or rack:session sets it automatically
-  #set :site_url, 'http://0.0.0.0:9292'
-  set :site_url, 'http://218.247.244.23:9292'
-  set :session_valid_for, 60 * 1 # 单位是秒
-  set :sso_server, 'http://218.245.2.174:8080/ssoServer'
-  set :app_id, 'kidslib'
 end
 
 # ----
@@ -37,6 +32,15 @@ helpers do
   # 之前测试不行是因为每次请求 shotgun 都重新载入这个文件
   DB = {}
 
+  def site_url;           'http://0.0.0.0:9292';                                          end
+  def sso_server;         'http://218.245.2.174:8080/ssoServer';                          end
+  def app_id;             'kidslib';                                                      end
+  def cas_service;        "service=#{ site_url }/set-session";                            end
+  def cas_login_url;      "#{ sso_server }/login?AppId=#{ app_id }&#{ cas_service }";     end
+  def cas_validate_url;   "#{ sso_server }/serviceValidate?#{ cas_service }&ticket=";     end
+  def cas_logout_url;     "#{ sso_server }/logout?#{ cas_service }";                      end
+  def session_valid_for;  60 * 10 ;                                                       end # 单位是秒
+
   # ----
   # 对外暴露的函数
   def save_ticket(ticket)
@@ -44,7 +48,7 @@ helpers do
   end
 
   def valid?(ticket)
-    valid_ticket? (ticket) || (redirect '/login')
+    valid_ticket?(ticket)
   end
 
   def delete_ticket(ticket)
@@ -56,7 +60,7 @@ helpers do
 
   def valid_ticket?(ticket)
     # 本地或者cas服务器上有ticket有效。因为我本地设定的过期时间很可能比cas上短
-    if not_expired(ticket) || remote_ticket?(ticket)
+    if not_expired(ticket)
       extend_ticket_time(ticket)
       true
     else
@@ -65,7 +69,7 @@ helpers do
   end
 
   def not_expired(ticket)
-    Time.now.to_i - timestamp(ticket) > settings.session_valid_for
+    Time.now.to_i - timestamp(ticket) < session_valid_for # 这里是小于号啊！！！
   end
 
   # ----
@@ -73,10 +77,11 @@ helpers do
   # http://sso.server.ip.address/ssoServer/serviceValidate
   # 需要参数是 service 和  ticket
   def remote_ticket?(ticket)
-    #true
-    r = HTTP.get "#{settings.sso_server}/serviceValidate?service=#{settings.site_url}/set-session&ticket=#{ticket}"
-    #r = HTTP.get "#{settings.sso_server}/serviceValidate?service=http%3A%2F%2F192.168.23.252:9292%2Fset-session&ticket=#{ticket}"
-    !!r.to_s['cas:authenticationSuccess']
+    r = HTTP.get "#{ cas_validate_url }#{ ticket }"
+    status = !!r
+    save_ticket ticket if status
+    status
+    #!!r.to_s['cas:authenticationSuccess']
   end
 
   def timestamp(ticket)
@@ -84,13 +89,13 @@ helpers do
   end
 
   def extend_ticket_time(ticket)
-    DB[ticket] = Time.now.to_i + settings.session_valid_for
+    DB[ticket] = Time.now.to_i + session_valid_for
   end
 
 end # 帮助函数结束
 
 before '/*.html' do
-  if valid? session['ticket']
+  if valid?(session['ticket'])
     pass
   else
     redirect '/login'
@@ -102,13 +107,12 @@ get '/' do
 end
 
 get '/login' do
-  redirect "#{settings.sso_server}/login?AppId=#{settings.app_id}&service=#{settings.site_url}/set-session"
-  #redirect "#{settings.sso_server}/login?AppId=#{settings.app_id}&service=http%3A%2F%2F192.168.23.252:9292%2Fset-session"
-end
+  redirect cas_login_url
+ end
 
 get '/logout' do
-  delete_ticket session['ticket'] && session.clear
-  redirect "#{settings.sso_server}/logout?service==#{settings.site_url}"
+  delete_ticket(session['ticket']) && session.clear
+  redirect cas_logout_url
 end
 
 # ----
@@ -117,14 +121,12 @@ end
 # 例如:http://xxx/yyy.asp?ticket=qweury03432432423ktjgj)
 get '/set-session' do
   ticket = params['ticket']
-  if remote_ticket? ticket
+  r = remote_ticket?(ticket)
+  if r
     session['ticket'] = ticket
     save_ticket ticket
-    status = remote_ticket?(ticket)
-    r = HTTP.get "#{settings.sso_server}/serviceValidate?service=#{settings.site_url}/set-session&ticket=#{ticket}"
-    #{}"#{r}"
-    "#{ticket}, #{status}, #{r}"
-    # redirect '/'
+    "#{ r }"
+    redirect '/'
   else
     redirect '/login'
   end
@@ -134,10 +136,6 @@ get '/db' do
   "#{DB.to_s}"
 end
 
-# ----
-# ## 需要保护的html文件
-# 1. 将要保护的html文件 从 public 目录移到与 server.rb 平行的html目录
-# 1. 且要保持目录
 get '/*' do |path|
   begin
     File.read "html/#{path}"

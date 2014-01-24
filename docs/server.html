@@ -43,7 +43,7 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-2">&#182;</a>
               </div>
-              <hr>
+              <h2 id="-">如何使用</h2>
 
             </div>
             
@@ -56,10 +56,9 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-3">&#182;</a>
               </div>
-              <h2 id="-">如何使用</h2>
-<pre><code> rackup
+              <pre><code> rackup
 </code></pre><p>站点会运行在 <a href="http://localhost:9292">http://localhost:9292</a></p>
-<hr>
+<h2 id="-">整体思路说明</h2>
 
             </div>
             
@@ -72,8 +71,7 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-4">&#182;</a>
               </div>
-              <h2 id="-">整体思路说明</h2>
-<ol>
+              <ol>
 <li>第一次验证通过后，我们需要把验证信息对应用户在本地存一下，并设定过期时间</li>
 <li>这个信息用cookie的形式让用户也存着</li>
 <li>如果过期了，我们要求用户再去验证，如果没有过期.就继续允许用户访问</li>
@@ -82,10 +80,9 @@
 <li>将要保护的html文件 从 public 目录移到与 server.rb 平行的html目录，且要保持目录</li>
 <li>在sinatra中对匹配html的路径做限制</li>
 </ol>
+<hr>
 
             </div>
-            
-            <div class="content"><div class='highlight'><pre>configure <span class="keyword">do</span></pre></div></div>
             
         </li>
         
@@ -96,12 +93,10 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-5">&#182;</a>
               </div>
-              <p>set :bind, &#39;192.168.103.99&#39; # <a href="http://stackoverflow.com/questions/16832472/ruby-sinatra-webservice-running-on-localhost4567-but-not-on-ip">http://stackoverflow.com/questions/16832472/ruby-sinatra-webservice-running-on-localhost4567-but-not-on-ip</a></p>
-
+              
             </div>
             
-            <div class="content"><div class='highlight'><pre>  enable <span class="symbol">:sessions</span> <span class="comment"># all request will have session either we set it or rack:session sets it automatically</span>
-<span class="keyword">end</span></pre></div></div>
+            <div class="content"><div class='highlight'><pre>configure <span class="keyword">do</span></pre></div></div>
             
         </li>
         
@@ -112,9 +107,12 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-6">&#182;</a>
               </div>
-              <hr>
+              <p>set :bind, &#39;192.168.103.99&#39; # <a href="http://stackoverflow.com/questions/16832472/ruby-sinatra-webservice-running-on-localhost4567-but-not-on-ip">http://stackoverflow.com/questions/16832472/ruby-sinatra-webservice-running-on-localhost4567-but-not-on-ip</a></p>
 
             </div>
+            
+            <div class="content"><div class='highlight'><pre>  enable <span class="symbol">:sessions</span> <span class="comment"># all request will have session either we set it or rack:session sets it automatically</span>
+<span class="keyword">end</span></pre></div></div>
             
         </li>
         
@@ -129,8 +127,6 @@
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>helpers <span class="keyword">do</span></pre></div></div>
-            
         </li>
         
         
@@ -140,14 +136,55 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-8">&#182;</a>
               </div>
-              <p>单线程跑这个程序，内存中就会持久化这个DB
-之前测试不行是因为每次请求 shotgun 都重新载入这个文件</p>
+              
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>helpers <span class="keyword">do</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-9">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-9">&#182;</a>
+              </div>
+              <ul>
+<li>单线程跑这个程序，内存中就会持久化这个DB</li>
+<li>之前测试不行是因为每次请求 shotgun 都重新载入这个文件</li>
+</ul>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  <span class="constant">DB</span> = {}
+            <div class="content"><div class='highlight'><pre>  <span class="constant">DB</span> = {}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-10">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-10">&#182;</a>
+              </div>
+              <h2 id="-">一些常量</h2>
 
-  <span class="function"><span class="keyword">def</span> <span class="title">site_url</span>;</span>           <span class="string">'http://0.0.0.0:9292'</span>;                                          <span class="keyword">end</span>
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-11">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-11">&#182;</a>
+              </div>
+              
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  <span class="function"><span class="keyword">def</span> <span class="title">site_url</span>;</span>           <span class="string">'http://0.0.0.0:9292'</span>;                                          <span class="keyword">end</span>
   <span class="function"><span class="keyword">def</span> <span class="title">sso_server</span>;</span>         <span class="string">'http://218.245.2.174:8080/ssoServer'</span>;                          <span class="keyword">end</span>
   <span class="function"><span class="keyword">def</span> <span class="title">app_id</span>;</span>             <span class="string">'kidslib'</span>;                                                      <span class="keyword">end</span>
   <span class="function"><span class="keyword">def</span> <span class="title">cas_service</span>;</span>        <span class="string">"service=<span class="subst">#{ site_url }</span>/set-session"</span>;                            <span class="keyword">end</span>
@@ -159,27 +196,26 @@
         </li>
         
         
-        <li id="section-9">
+        <li id="section-12">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-9">&#182;</a>
+                <a class="pilcrow" href="#section-12">&#182;</a>
               </div>
-              <hr>
+              <h2 id="-">对外暴露的函数</h2>
 
             </div>
             
         </li>
         
         
-        <li id="section-10">
+        <li id="section-13">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-10">&#182;</a>
+                <a class="pilcrow" href="#section-13">&#182;</a>
               </div>
-              <p>对外暴露的函数</p>
-
+              
             </div>
             
             <div class="content"><div class='highlight'><pre>  <span class="function"><span class="keyword">def</span> <span class="title">save_ticket</span><span class="params">(ticket, name)</span></span>
@@ -197,66 +233,13 @@
         </li>
         
         
-        <li id="section-11">
-            <div class="annotation">
-              
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-11">&#182;</a>
-              </div>
-              <hr>
-
-            </div>
-            
-        </li>
-        
-        
-        <li id="section-12">
-            <div class="annotation">
-              
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-12">&#182;</a>
-              </div>
-              <p>帮助函数</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>  <span class="function"><span class="keyword">def</span> <span class="title">valid_ticket?</span><span class="params">(ticket)</span></span></pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-13">
-            <div class="annotation">
-              
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-13">&#182;</a>
-              </div>
-              <p>本地或者cas服务器上有ticket有效。因为我本地设定的过期时间很可能比cas上短</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>    <span class="keyword">if</span> not_expired(ticket)
-      extend_ticket_time(ticket)
-      <span class="keyword">true</span>
-    <span class="keyword">else</span>
-      <span class="keyword">false</span>
-    <span class="keyword">end</span>
-  <span class="keyword">end</span>
-
-  <span class="function"><span class="keyword">def</span> <span class="title">not_expired</span><span class="params">(ticket)</span></span>
-    <span class="constant">Time</span>.now.to_i - timestamp(ticket) &lt; session_valid_for <span class="comment"># 这里是小于号啊！！！</span>
-  <span class="keyword">end</span></pre></div></div>
-            
-        </li>
-        
-        
         <li id="section-14">
             <div class="annotation">
               
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-14">&#182;</a>
               </div>
-              <hr>
+              <h2 id="-ticket">验证ticket</h2>
 
             </div>
             
@@ -269,11 +252,12 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-15">&#182;</a>
               </div>
-              <p>验证ticket
-<a href="http://sso.server.ip.address/ssoServer/serviceValidate">http://sso.server.ip.address/ssoServer/serviceValidate</a>
-需要参数是 service 和  ticket
-正确的话返回用户名字符串 \n\t\n\t\tzhj\n\n\n\t\n\n
-不正确返回字符串 &quot;\n\t\n\t\tticket &#39;ST-161-QmfeHOdqIkjfo6Wim3aa-ssoServerf&#39; not recognized\n\t\n\n</p>
+              <ul>
+<li><a href="http://sso.server.ip.address/ssoServer/serviceValidate">http://sso.server.ip.address/ssoServer/serviceValidate</a></li>
+<li>需要参数是 service 和  ticket</li>
+<li>正确的话返回用户名字符串 \n\t\n\t\tzhj\n\n\n\t\n\n</li>
+<li>不正确返回字符串 &quot;\n\t\n\t\tticket &#39;ST-161-QmfeHOdqIkjfo6Wim3aa-ssoServerf&#39; not recognized\n\t\n\n</li>
+</ul>
 
             </div>
             
@@ -297,7 +281,45 @@
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  <span class="keyword">end</span>
+            <div class="content"><div class='highlight'><pre>  <span class="keyword">end</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-17">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-17">&#182;</a>
+              </div>
+              <h2 id="-">帮助函数</h2>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-18">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-18">&#182;</a>
+              </div>
+              
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  <span class="function"><span class="keyword">def</span> <span class="title">valid_ticket?</span><span class="params">(ticket)</span></span>
+    <span class="keyword">if</span> not_expired(ticket) <span class="comment"># 本地或者cas服务器上有ticket有效。因为我本地设定的过期时间很可能比cas上短</span>
+      extend_ticket_time(ticket)
+      <span class="keyword">true</span>
+    <span class="keyword">else</span>
+      <span class="keyword">false</span>
+    <span class="keyword">end</span>
+  <span class="keyword">end</span>
+
+  <span class="function"><span class="keyword">def</span> <span class="title">not_expired</span><span class="params">(ticket)</span></span>
+    <span class="constant">Time</span>.now.to_i - timestamp(ticket) &lt; session_valid_for <span class="comment"># 这里是小于号啊！！！</span>
+  <span class="keyword">end</span>
 
   <span class="function"><span class="keyword">def</span> <span class="title">timestamp</span><span class="params">(ticket)</span></span>
     <span class="constant">DB</span>[ticket] ? <span class="constant">DB</span>[ticket][<span class="symbol">:time</span>].to_i <span class="symbol">:</span> <span class="number">0</span> <span class="comment"># 如果 DB[ticket] 的值是 nil，会转为数字0，好让其它函数做时间上的加减。</span>
@@ -307,9 +329,34 @@
     <span class="constant">DB</span>[ticket][<span class="symbol">:time</span>] = <span class="constant">Time</span>.now.to_i
   <span class="keyword">end</span>
 
-<span class="keyword">end</span> <span class="comment"># 帮助函数结束</span>
+<span class="keyword">end</span> <span class="comment"># 帮助函数结束</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-19">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-19">&#182;</a>
+              </div>
+              <hr>
 
-before <span class="string">'/*.html'</span> <span class="keyword">do</span>
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-20">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-20">&#182;</a>
+              </div>
+              
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>before <span class="string">'/*.html'</span> <span class="keyword">do</span>
   <span class="keyword">if</span> valid?(session[<span class="string">'ticket'</span>])
     pass
   <span class="keyword">else</span>
@@ -333,11 +380,11 @@ get <span class="string">'/logout'</span> <span class="keyword">do</span>
         </li>
         
         
-        <li id="section-17">
+        <li id="section-21">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-17">&#182;</a>
+                <a class="pilcrow" href="#section-21">&#182;</a>
               </div>
               <hr>
 
@@ -346,15 +393,17 @@ get <span class="string">'/logout'</span> <span class="keyword">do</span>
         </li>
         
         
-        <li id="section-18">
+        <li id="section-22">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-18">&#182;</a>
+                <a class="pilcrow" href="#section-22">&#182;</a>
               </div>
               <h2 id="-session">设置session</h2>
-<p>登陆service在正常登陆后会在返回地址带上ticket
-例如:<a href="http://xxx/yyy.asp?ticket=qweury03432432423ktjgj">http://xxx/yyy.asp?ticket=qweury03432432423ktjgj</a>)</p>
+<ul>
+<li>登陆service在正常登陆后会在返回地址带上ticket</li>
+<li>例如:<a href="http://xxx/yyy.asp?ticket=qweury03432432423ktjgj">http://xxx/yyy.asp?ticket=qweury03432432423ktjgj</a>)</li>
+</ul>
 
             </div>
             
@@ -367,9 +416,34 @@ get <span class="string">'/logout'</span> <span class="keyword">do</span>
   <span class="keyword">else</span>
     redirect <span class="string">'/login'</span>
   <span class="keyword">end</span>
-<span class="keyword">end</span>
+<span class="keyword">end</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-23">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-23">&#182;</a>
+              </div>
+              <hr>
 
-get <span class="string">'/db'</span> <span class="keyword">do</span>
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-24">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-24">&#182;</a>
+              </div>
+              
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>get <span class="string">'/db'</span> <span class="keyword">do</span>
   <span class="string">"<span class="subst">#{<span class="constant">DB</span>.to_s}</span>"</span>
 <span class="keyword">end</span>
 

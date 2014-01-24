@@ -43,8 +43,8 @@ helpers do
 
   # ----
   # 对外暴露的函数
-  def save_ticket(ticket)
-    DB[ticket] = Time.now.to_i
+  def save_ticket(ticket, name)
+    DB[ticket] = { user: name, time: Time.now.to_i }
   end
 
   def valid?(ticket)
@@ -76,20 +76,23 @@ helpers do
   # 验证ticket
   # http://sso.server.ip.address/ssoServer/serviceValidate
   # 需要参数是 service 和  ticket
+  # 正确的话返回用户名字符串 \n\t\n\t\tzhj\n\n\n\t\n\n
+  # 不正确返回字符串 "\n\t\n\t\tticket 'ST-161-QmfeHOdqIkjfo6Wim3aa-ssoServerf' not recognized\n\t\n\n
   def remote_ticket?(ticket)
-    r = HTTP.get "#{ cas_validate_url }#{ ticket }"
-    status = !!r
-    save_ticket ticket if status
+    res = HTTP.get "#{ cas_validate_url }#{ ticket }"
+    status = !res.to_s['recognized']
+    r = res.to_s.gsub(/\s/, '')
+    save_ticket(ticket, r) if status
     status
     #!!r.to_s['cas:authenticationSuccess']
   end
 
   def timestamp(ticket)
-    DB[ticket].to_i # 如果 DB[ticket] 的值是 nil，会转为数字0，好让其它函数做时间上的加减。
+    DB[ticket] ? DB[ticket][:time].to_i : 0 # 如果 DB[ticket] 的值是 nil，会转为数字0，好让其它函数做时间上的加减。
   end
 
   def extend_ticket_time(ticket)
-    DB[ticket] = Time.now.to_i + session_valid_for
+    DB[ticket][:time] = Time.now.to_i
   end
 
 end # 帮助函数结束
@@ -123,9 +126,7 @@ get '/set-session' do
   ticket = params['ticket']
   r = remote_ticket?(ticket)
   if r
-    session['ticket'] = ticket
-    save_ticket ticket
-    "#{ r }"
+    session['ticket'] = ticket # 可浏览器设定session
     redirect '/'
   else
     redirect '/login'

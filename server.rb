@@ -145,6 +145,10 @@ get '/db' do
   "#{DB.to_s}"
 end
 
+get '/db/clear' do
+  DB.clear
+end
+
 get '/*' do |path|
   begin
     File.read "html/#{path}"

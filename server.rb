@@ -184,7 +184,7 @@ end
 # ----
 
 get '/db' do
-  "#{DB.inspect}" # DB.to_s only gives you  "#<PStore:0x000001014b54b8>"
+  "#{DB.psych_to_yaml}" # DB.to_s only gives you  "#<PStore:0x000001014b54b8>"
 end
 
 get '/test/set/:ticket/:name' do

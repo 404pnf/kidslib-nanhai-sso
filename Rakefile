@@ -23,4 +23,9 @@ task :cop do
   system("rubocop *.rb")
 end
 
-task :default => [:help]
+desc "run test"
+task :test do
+  system("ruby test/*.rb")
+end
+
+task :default => [:test]

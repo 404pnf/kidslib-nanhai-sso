@@ -34,3 +34,4 @@ class NanhaiTest < Test::Unit::TestCase
     assert res['ticket'][:user] == 'name', '正确地存储了session信息'
   end
 end
+

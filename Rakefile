@@ -26,6 +26,7 @@ end
 desc "run test"
 task :test do
   system("ruby test/*.rb")
+  system("rm sess.yml")
 end
 
 task :default => [:test]

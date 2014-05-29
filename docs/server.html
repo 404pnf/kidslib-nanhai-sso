@@ -27,12 +27,9 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-1">&#182;</a>
               </div>
-              
+              <h2 id="-">如何使用</h2>
+
             </div>
-            
-            <div class="content"><div class='highlight'><pre><span class="keyword">require</span> <span class="string">'sinatra'</span>
-<span class="keyword">require</span> <span class="string">'http'</span> <span class="comment"># https://github.com/tarcieri/http</span>
-<span class="keyword">require</span> <span class="string">'uri'</span></pre></div></div>
             
         </li>
         
@@ -43,7 +40,9 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-2">&#182;</a>
               </div>
-              <h2 id="-">如何使用</h2>
+              <pre><code> rackup
+</code></pre><p>站点会运行在 <a href="http://localhost:9292">http://localhost:9292</a></p>
+<h2 id="-">整体思路说明</h2>
 
             </div>
             
@@ -56,11 +55,27 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-3">&#182;</a>
               </div>
-              <pre><code> rackup
-</code></pre><p>站点会运行在 <a href="http://localhost:9292">http://localhost:9292</a></p>
-<h2 id="-">整体思路说明</h2>
+              <ol>
+<li>第一次验证通过后，我们需要把验证信息对应用户在本地存一下，并设定过期时间</li>
+<li>这个信息用cookie的形式让用户也存着</li>
+<li>如果过期了，我们要求用户再去验证，如果没有过期.就继续允许用户访问</li>
+<li>由于kidslib网站没有任何地方让用户个性化和保存个人设置，因此我们根本不需要得到用户名等信息。只需确保ticket没有过期。</li>
+<li>每次用户访问一个页面，在本地的db中延长一下ticket过期时间</li>
+<li>将要保护的html文件 从 public 目录移到与 server.rb 平行的html目录，且要保持目录</li>
+<li>在sinatra中对匹配html的路径做限制</li>
+<li>为了能够适合多线程的web 服务器如 thin 等，不用内存中的hash而是pstore</li>
+<li>站点运行时可以查看文件夹内的 sess.yml 文件，记录了用户session</li>
+<li>程序退出时会自动删除 sess.yml</li>
+</ol>
 
             </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="keyword">require</span> <span class="string">'sinatra'</span>
+<span class="keyword">require</span> <span class="string">'http'</span> <span class="comment"># https://github.com/tarcieri/http</span>
+<span class="keyword">require</span> <span class="string">'uri'</span>
+<span class="keyword">require</span> <span class="string">'pstore'</span>
+<span class="keyword">require</span> <span class="string">'yaml/store'</span>
+<span class="keyword">require</span> <span class="string">'sanitize'</span></pre></div></div>
             
         </li>
         
@@ -71,16 +86,7 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-4">&#182;</a>
               </div>
-              <ol>
-<li>第一次验证通过后，我们需要把验证信息对应用户在本地存一下，并设定过期时间</li>
-<li>这个信息用cookie的形式让用户也存着</li>
-<li>如果过期了，我们要求用户再去验证，如果没有过期.就继续允许用户访问</li>
-<li>由于kidslib网站没有任何地方让用户个性化和保存个人设置，因此我们根本不需要得到用户名等信息。只需确保ticket没有过期。</li>
-<li>每次用户访问一个页面，在本地的db中延长一下ticket过期时间</li>
-<li>将要保护的html文件 从 public 目录移到与 server.rb 平行的html目录，且要保持目录</li>
-<li>在sinatra中对匹配html的路径做限制</li>
-</ol>
-<hr>
+              <hr>
 
             </div>
             
@@ -152,12 +158,13 @@
               </div>
               <ul>
 <li>单线程跑这个程序，内存中就会持久化这个DB</li>
-<li>之前测试不行是因为每次请求 shotgun 都重新载入这个文件</li>
+<li>之前测试不行是因为每次请求 shotgun 都重新载入这个文件
+DB = {}</li>
 </ul>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>  <span class="constant">DB</span> = {}</pre></div></div>
+            <div class="content"><div class='highlight'><pre>  <span class="constant">DB</span> = <span class="constant">YAML::Store</span>.new(<span class="string">'sess.yml'</span>, <span class="keyword">true</span>) <span class="comment"># true: thread safe. see pstore doc</span></pre></div></div>
             
         </li>
         
@@ -184,14 +191,37 @@
               
             </div>
             
-            <div class="content"><div class='highlight'><pre>  <span class="function"><span class="keyword">def</span> <span class="title">site_url</span>;</span>           <span class="string">'http://0.0.0.0:9292'</span>;                                          <span class="keyword">end</span>
-  <span class="function"><span class="keyword">def</span> <span class="title">sso_server</span>;</span>         <span class="string">'http://218.245.2.174:8080/ssoServer'</span>;                          <span class="keyword">end</span>
-  <span class="function"><span class="keyword">def</span> <span class="title">app_id</span>;</span>             <span class="string">'kidslib'</span>;                                                      <span class="keyword">end</span>
-  <span class="function"><span class="keyword">def</span> <span class="title">cas_service</span>;</span>        <span class="string">"service=<span class="subst">#{ site_url }</span>/set-session"</span>;                            <span class="keyword">end</span>
-  <span class="function"><span class="keyword">def</span> <span class="title">cas_login_url</span>;</span>      <span class="string">"<span class="subst">#{ sso_server }</span>/login?AppId=<span class="subst">#{ app_id }</span>&amp;<span class="subst">#{ cas_service }</span>"</span>;     <span class="keyword">end</span>
-  <span class="function"><span class="keyword">def</span> <span class="title">cas_validate_url</span>;</span>   <span class="string">"<span class="subst">#{ sso_server }</span>/serviceValidate?<span class="subst">#{ cas_service }</span>&amp;ticket="</span>;     <span class="keyword">end</span>
-  <span class="function"><span class="keyword">def</span> <span class="title">cas_logout_url</span>;</span>     <span class="string">"<span class="subst">#{ sso_server }</span>/logout?<span class="subst">#{ cas_service }</span>"</span>;                      <span class="keyword">end</span>
-  <span class="function"><span class="keyword">def</span> <span class="title">session_valid_for</span>;</span>  <span class="number">60</span> * <span class="number">10</span> ;                                                       <span class="keyword">end</span> <span class="comment"># 单位是秒</span></pre></div></div>
+            <div class="content"><div class='highlight'><pre>  <span class="function"><span class="keyword">def</span> <span class="title">site_url</span></span>
+    <span class="string">'http://0.0.0.0:9292'</span>
+  <span class="keyword">end</span>
+
+  <span class="function"><span class="keyword">def</span> <span class="title">sso_server</span></span>
+    <span class="string">'http://218.245.2.174:8080/ssoServer'</span>
+  <span class="keyword">end</span>
+
+  <span class="function"><span class="keyword">def</span> <span class="title">app_id</span></span>
+    <span class="string">'kidslib'</span>
+  <span class="keyword">end</span>
+
+  <span class="function"><span class="keyword">def</span> <span class="title">cas_service</span></span>
+    <span class="string">"service=<span class="subst">#{ site_url }</span>/set-session"</span>
+  <span class="keyword">end</span>
+
+  <span class="function"><span class="keyword">def</span> <span class="title">cas_login_url</span></span>
+    <span class="string">"<span class="subst">#{ sso_server }</span>/login?AppId=<span class="subst">#{ app_id }</span>&amp;<span class="subst">#{ cas_service }</span>"</span>
+  <span class="keyword">end</span>
+
+  <span class="function"><span class="keyword">def</span> <span class="title">cas_validate_url</span></span>
+    <span class="string">"<span class="subst">#{ sso_server }</span>/serviceValidate?<span class="subst">#{ cas_service }</span>&amp;ticket="</span>
+  <span class="keyword">end</span>
+
+  <span class="function"><span class="keyword">def</span> <span class="title">cas_logout_url</span></span>
+    <span class="string">"<span class="subst">#{ sso_server }</span>/logout?<span class="subst">#{ cas_service }</span>"</span>
+  <span class="keyword">end</span>
+
+  <span class="function"><span class="keyword">def</span> <span class="title">session_valid_for</span></span>
+    <span class="number">60</span> * <span class="number">10</span>
+  <span class="keyword">end</span> <span class="comment"># 单位是秒</span></pre></div></div>
             
         </li>
         
@@ -218,17 +248,7 @@
               
             </div>
             
-            <div class="content"><div class='highlight'><pre>  <span class="function"><span class="keyword">def</span> <span class="title">save_ticket</span><span class="params">(ticket, name)</span></span>
-    <span class="constant">DB</span>[ticket] = { <span class="symbol">user:</span> name, <span class="symbol">time:</span> <span class="constant">Time</span>.now.to_i }
-  <span class="keyword">end</span>
-
-  <span class="function"><span class="keyword">def</span> <span class="title">valid?</span><span class="params">(ticket)</span></span>
-    valid_ticket?(ticket)
-  <span class="keyword">end</span>
-
-  <span class="function"><span class="keyword">def</span> <span class="title">delete_ticket</span><span class="params">(ticket)</span></span>
-    <span class="constant">DB</span>.delete ticket
-  <span class="keyword">end</span></pre></div></div>
+            <div class="content"><div class='highlight'><pre>  <span class="function"><span class="keyword">def</span> <span class="title">save_ticket</span><span class="params">(ticket, name)</span></span></pre></div></div>
             
         </li>
         
@@ -239,9 +259,21 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-14">&#182;</a>
               </div>
-              <h2 id="-ticket">验证ticket</h2>
+              <p>DB[ticket] = { user: name, time: Time.now.to_i }</p>
 
             </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="constant">DB</span>.transaction <span class="keyword">do</span>
+      <span class="constant">DB</span>[ticket] = { <span class="symbol">user:</span> <span class="constant">Sanitize</span>.clean(name), <span class="symbol">time:</span> <span class="constant">Time</span>.now.to_i }
+      <span class="constant">DB</span>.commit
+    <span class="keyword">end</span>
+  <span class="keyword">end</span>
+
+  <span class="function"><span class="keyword">def</span> <span class="title">valid?</span><span class="params">(ticket)</span></span>
+    valid_ticket?(ticket)
+  <span class="keyword">end</span>
+
+  <span class="function"><span class="keyword">def</span> <span class="title">delete_ticket</span><span class="params">(ticket)</span></span></pre></div></div>
             
         </li>
         
@@ -251,6 +283,38 @@
               
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-15">&#182;</a>
+              </div>
+              <p>DB.delete ticket</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="constant">DB</span>.transaction <span class="keyword">do</span>
+      <span class="constant">DB</span>.delete ticket
+      <span class="constant">DB</span>.commit
+    <span class="keyword">end</span>
+  <span class="keyword">end</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-16">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-16">&#182;</a>
+              </div>
+              <h2 id="-ticket">验证ticket</h2>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-17">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-17">&#182;</a>
               </div>
               <ul>
 <li><a href="http://sso.server.ip.address/ssoServer/serviceValidate">http://sso.server.ip.address/ssoServer/serviceValidate</a></li>
@@ -271,11 +335,11 @@
         </li>
         
         
-        <li id="section-16">
+        <li id="section-18">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-16">&#182;</a>
+                <a class="pilcrow" href="#section-18">&#182;</a>
               </div>
               <p>!!r.to_s[&#39;cas:authenticationSuccess&#39;]</p>
 
@@ -286,11 +350,11 @@
         </li>
         
         
-        <li id="section-17">
+        <li id="section-19">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-17">&#182;</a>
+                <a class="pilcrow" href="#section-19">&#182;</a>
               </div>
               <h2 id="-">帮助函数</h2>
 
@@ -299,11 +363,11 @@
         </li>
         
         
-        <li id="section-18">
+        <li id="section-20">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-18">&#182;</a>
+                <a class="pilcrow" href="#section-20">&#182;</a>
               </div>
               
             </div>
@@ -321,61 +385,7 @@
     <span class="constant">Time</span>.now.to_i - timestamp(ticket) &lt; session_valid_for <span class="comment"># 这里是小于号啊！！！</span>
   <span class="keyword">end</span>
 
-  <span class="function"><span class="keyword">def</span> <span class="title">timestamp</span><span class="params">(ticket)</span></span>
-    <span class="constant">DB</span>[ticket] ? <span class="constant">DB</span>[ticket][<span class="symbol">:time</span>].to_i <span class="symbol">:</span> <span class="number">0</span> <span class="comment"># 如果 DB[ticket] 的值是 nil，会转为数字0，好让其它函数做时间上的加减。</span>
-  <span class="keyword">end</span>
-
-  <span class="function"><span class="keyword">def</span> <span class="title">extend_ticket_time</span><span class="params">(ticket)</span></span>
-    <span class="constant">DB</span>[ticket][<span class="symbol">:time</span>] = <span class="constant">Time</span>.now.to_i
-  <span class="keyword">end</span>
-
-<span class="keyword">end</span> <span class="comment"># 帮助函数结束</span></pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-19">
-            <div class="annotation">
-              
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-19">&#182;</a>
-              </div>
-              <hr>
-
-            </div>
-            
-        </li>
-        
-        
-        <li id="section-20">
-            <div class="annotation">
-              
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-20">&#182;</a>
-              </div>
-              
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>before <span class="string">'/*.html'</span> <span class="keyword">do</span>
-  <span class="keyword">if</span> valid?(session[<span class="string">'ticket'</span>])
-    pass
-  <span class="keyword">else</span>
-    redirect <span class="string">'/login'</span>
-  <span class="keyword">end</span>
-<span class="keyword">end</span>
-
-get <span class="string">'/'</span> <span class="keyword">do</span>
-  redirect <span class="string">'/index.html'</span>
-<span class="keyword">end</span>
-
-get <span class="string">'/login'</span> <span class="keyword">do</span>
-  redirect cas_login_url
- <span class="keyword">end</span>
-
-get <span class="string">'/logout'</span> <span class="keyword">do</span>
-  delete_ticket(session[<span class="string">'ticket'</span>]) &amp;&amp; session.clear
-  redirect cas_logout_url
-<span class="keyword">end</span></pre></div></div>
+  <span class="function"><span class="keyword">def</span> <span class="title">timestamp</span><span class="params">(ticket)</span></span></pre></div></div>
             
         </li>
         
@@ -386,9 +396,16 @@ get <span class="string">'/logout'</span> <span class="keyword">do</span>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-21">&#182;</a>
               </div>
-              <hr>
+              <p>DB[ticket] ? DB[ticket][:time].to_i : 0 # 如果 DB[ticket] 的值是 nil，会转为数字0，好让其它函数做时间上的加减。</p>
 
             </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="constant">DB</span>.transaction(<span class="keyword">true</span>) <span class="keyword">do</span> <span class="comment"># true means read-only</span>
+      <span class="constant">DB</span>[ticket] ? <span class="constant">DB</span>[ticket][<span class="symbol">:time</span>].to_i <span class="symbol">:</span> <span class="number">0</span>
+    <span class="keyword">end</span>
+  <span class="keyword">end</span>
+
+  <span class="function"><span class="keyword">def</span> <span class="title">extend_ticket_time</span><span class="params">(ticket)</span></span></pre></div></div>
             
         </li>
         
@@ -399,24 +416,17 @@ get <span class="string">'/logout'</span> <span class="keyword">do</span>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-22">&#182;</a>
               </div>
-              <h2 id="-session">设置session</h2>
-<ul>
-<li>登陆service在正常登陆后会在返回地址带上ticket</li>
-<li>例如:<a href="http://xxx/yyy.asp?ticket=qweury03432432423ktjgj">http://xxx/yyy.asp?ticket=qweury03432432423ktjgj</a>)</li>
-</ul>
+              <p>DB[ticket][:time] = Time.now.to_i</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>get <span class="string">'/set-session'</span> <span class="keyword">do</span>
-  ticket = params[<span class="string">'ticket'</span>]
-  r = remote_ticket?(ticket)
-  <span class="keyword">if</span> r
-    session[<span class="string">'ticket'</span>] = ticket <span class="comment"># 可浏览器设定session</span>
-    redirect <span class="string">'/'</span>
-  <span class="keyword">else</span>
-    redirect <span class="string">'/login'</span>
+            <div class="content"><div class='highlight'><pre>    <span class="constant">DB</span>.transaction <span class="keyword">do</span>
+      <span class="constant">DB</span>[ticket][<span class="symbol">:time</span>] = <span class="constant">Time</span>.now.to_i
+      <span class="constant">DB</span>.commit
+    <span class="keyword">end</span>
   <span class="keyword">end</span>
-<span class="keyword">end</span></pre></div></div>
+
+<span class="keyword">end</span> <span class="comment"># 帮助函数结束</span></pre></div></div>
             
         </li>
         
@@ -443,11 +453,117 @@ get <span class="string">'/logout'</span> <span class="keyword">do</span>
               
             </div>
             
-            <div class="content"><div class='highlight'><pre>get <span class="string">'/db'</span> <span class="keyword">do</span>
-  <span class="string">"<span class="subst">#{<span class="constant">DB</span>.to_s}</span>"</span>
+            <div class="content"><div class='highlight'><pre>before <span class="string">'/*.html'</span> <span class="keyword">do</span>
+  <span class="keyword">if</span> valid?(session[<span class="string">'ticket'</span>])
+    pass
+  <span class="keyword">else</span>
+    redirect <span class="string">'/login'</span>
+  <span class="keyword">end</span>
 <span class="keyword">end</span>
 
-get <span class="string">'/*'</span> <span class="keyword">do</span> |path|
+get <span class="string">'/'</span> <span class="keyword">do</span>
+  redirect <span class="string">'/index.html'</span>
+<span class="keyword">end</span>
+
+get <span class="string">'/login'</span> <span class="keyword">do</span>
+  redirect cas_login_url
+<span class="keyword">end</span>
+
+get <span class="string">'/logout'</span> <span class="keyword">do</span>
+  delete_ticket(session[<span class="string">'ticket'</span>]) &amp;&amp; session.clear
+  redirect cas_logout_url
+<span class="keyword">end</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-25">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-25">&#182;</a>
+              </div>
+              <hr>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-26">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-26">&#182;</a>
+              </div>
+              <h2 id="-session">设置session</h2>
+<ul>
+<li>登陆service在正常登陆后会在返回地址带上ticket</li>
+<li>例如:<a href="http://xxx/yyy.asp?ticket=qweury03432432423ktjgj">http://xxx/yyy.asp?ticket=qweury03432432423ktjgj</a>)</li>
+</ul>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>get <span class="string">'/set-session'</span> <span class="keyword">do</span>
+  ticket = params[<span class="string">'ticket'</span>]
+  r = remote_ticket?(ticket)
+  <span class="keyword">if</span> r
+    session[<span class="string">'ticket'</span>] = ticket <span class="comment"># 可浏览器设定session</span>
+    redirect <span class="string">'/'</span>
+  <span class="keyword">else</span>
+    redirect <span class="string">'/login'</span>
+  <span class="keyword">end</span>
+<span class="keyword">end</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-27">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-27">&#182;</a>
+              </div>
+              <hr>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-28">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-28">&#182;</a>
+              </div>
+              
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>get <span class="string">'/db'</span> <span class="keyword">do</span>
+  <span class="string">"<span class="subst">#{<span class="constant">DB</span>.inspect}</span>"</span> <span class="comment"># DB.to_s only gives you  "#&lt;PStore:0x000001014b54b8&gt;"</span>
+<span class="keyword">end</span>
+
+get <span class="string">'/test/set/:ticket/:name'</span> <span class="keyword">do</span>
+  save_ticket params[<span class="symbol">:ticket</span>], params[<span class="symbol">:name</span>]
+<span class="keyword">end</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-29">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-29">&#182;</a>
+              </div>
+              <p>get &#39;/db/clear&#39; do
+  DB.clear
+end</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>get <span class="string">'/*'</span> <span class="keyword">do</span> |path|
   <span class="keyword">begin</span>
     <span class="constant">File</span>.read <span class="string">"html/<span class="subst">#{path}</span>"</span>
   <span class="keyword">rescue</span>

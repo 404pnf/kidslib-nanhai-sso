@@ -14,6 +14,9 @@
 # 5. 每次用户访问一个页面，在本地的db中延长一下ticket过期时间
 # 6. 将要保护的html文件 从 public 目录移到与 server.rb 平行的html目录，且要保持目录
 # 7. 在sinatra中对匹配html的路径做限制
+# 8. 为了能够适合多线程的web 服务器如 thin 等，不用内存中的hash而是pstore
+# 9. 站点运行时可以查看文件夹内的 sess.yml 文件，记录了用户session
+# 10. 程序退出时会自动删除 sess.yml
 
 require 'sinatra'
 require 'http' # https://github.com/tarcieri/http

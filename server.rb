@@ -1,7 +1,3 @@
-require 'sinatra'
-require 'http' # https://github.com/tarcieri/http
-require 'uri'
-
 # 如何使用
 # ----
 #
@@ -20,6 +16,14 @@ require 'uri'
 # 6. 将要保护的html文件 从 public 目录移到与 server.rb 平行的html目录，且要保持目录
 # 7. 在sinatra中对匹配html的路径做限制
 
+
+require 'sinatra'
+require 'http' # https://github.com/tarcieri/http
+require 'uri'
+require 'pstore'
+require 'yaml/store'
+require 'sanitize'
+
 # ----
 
 configure do
@@ -34,8 +38,10 @@ helpers do
 
   # - 单线程跑这个程序，内存中就会持久化这个DB
   # - 之前测试不行是因为每次请求 shotgun 都重新载入这个文件
-  DB = {}
+  # DB = {}
 
+  #file = Tempfile.new('nh-sso-session')
+  DB = YAML::Store.new('sess.yml', true) # true: thread safe. see pstore doc
   # 一些常量
   # ----
   def site_url;           'http://0.0.0.0:9292';                                          end
@@ -50,7 +56,11 @@ helpers do
   # 对外暴露的函数
   # ----
   def save_ticket(ticket, name)
-    DB[ticket] = { user: name, time: Time.now.to_i }
+    # DB[ticket] = { user: name, time: Time.now.to_i }
+    DB.transaction do
+      DB[ticket] = { user: Sanitize.clean(name), time: Time.now.to_i }
+      DB.commit
+    end
   end
 
   def valid?(ticket)
@@ -58,7 +68,11 @@ helpers do
   end
 
   def delete_ticket(ticket)
-    DB.delete ticket
+    # DB.delete ticket
+    DB.transaction do
+      DB.delete ticket
+      DB.commit
+    end
   end
 
   # 验证ticket
@@ -92,11 +106,18 @@ helpers do
   end
 
   def timestamp(ticket)
-    DB[ticket] ? DB[ticket][:time].to_i : 0 # 如果 DB[ticket] 的值是 nil，会转为数字0，好让其它函数做时间上的加减。
+    # DB[ticket] ? DB[ticket][:time].to_i : 0 # 如果 DB[ticket] 的值是 nil，会转为数字0，好让其它函数做时间上的加减。
+    DB.transaction(true) do # true means read-only
+      DB[ticket] ? DB[ticket][:time].to_i : 0
+    end
   end
 
   def extend_ticket_time(ticket)
-    DB[ticket][:time] = Time.now.to_i
+    # DB[ticket][:time] = Time.now.to_i
+    DB.transaction do
+      DB[ticket][:time] = Time.now.to_i
+      DB.commit
+    end
   end
 
 end # 帮助函数结束
@@ -117,7 +138,7 @@ end
 
 get '/login' do
   redirect cas_login_url
- end
+end
 
 get '/logout' do
   delete_ticket(session['ticket']) && session.clear
@@ -142,12 +163,16 @@ end
 # ----
 
 get '/db' do
-  "#{DB.to_s}"
+  "#{DB.inspect}" # DB.to_s only gives you  "#<PStore:0x000001014b54b8>"
 end
 
-get '/db/clear' do
-  DB.clear
+get '/test/set/:ticket/:name' do
+  save_ticket params[:ticket], params[:name]
 end
+
+# get '/db/clear' do
+#   DB.clear
+# end
 
 get '/*' do |path|
   begin
@@ -156,3 +181,5 @@ get '/*' do |path|
     '没找到请求的资源。试试其它的？'
   end
 end
+
+

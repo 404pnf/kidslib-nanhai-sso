@@ -2,3 +2,4 @@
 source $HOME/.rvm/scripts/rvm
 gem install sinatra
 gem install http
+gem install sanitize

@@ -5,7 +5,6 @@
 #
 # 站点会运行在 http://localhost:9292
 
-
 # 整体思路说明
 # ----
 # 1. 第一次验证通过后，我们需要把验证信息对应用户在本地存一下，并设定过期时间
@@ -16,7 +15,6 @@
 # 6. 将要保护的html文件 从 public 目录移到与 server.rb 平行的html目录，且要保持目录
 # 7. 在sinatra中对匹配html的路径做限制
 
-
 require 'sinatra'
 require 'http' # https://github.com/tarcieri/http
 require 'uri'
@@ -25,12 +23,10 @@ require 'yaml/store'
 require 'sanitize'
 
 # ----
-
 configure do
   # set :bind, '192.168.103.99' # http://stackoverflow.com/questions/16832472/ruby-sinatra-webservice-running-on-localhost4567-but-not-on-ip
   enable :sessions # all request will have session either we set it or rack:session sets it automatically
 end
-
 
 # 站点帮助函数
 # ----
@@ -40,18 +36,40 @@ helpers do
   # - 之前测试不行是因为每次请求 shotgun 都重新载入这个文件
   # DB = {}
 
-  #file = Tempfile.new('nh-sso-session')
   DB = YAML::Store.new('sess.yml', true) # true: thread safe. see pstore doc
   # 一些常量
   # ----
-  def site_url;           'http://0.0.0.0:9292';                                          end
-  def sso_server;         'http://218.245.2.174:8080/ssoServer';                          end
-  def app_id;             'kidslib';                                                      end
-  def cas_service;        "service=#{ site_url }/set-session";                            end
-  def cas_login_url;      "#{ sso_server }/login?AppId=#{ app_id }&#{ cas_service }";     end
-  def cas_validate_url;   "#{ sso_server }/serviceValidate?#{ cas_service }&ticket=";     end
-  def cas_logout_url;     "#{ sso_server }/logout?#{ cas_service }";                      end
-  def session_valid_for;  60 * 10 ;                                                       end # 单位是秒
+  def site_url
+    'http://0.0.0.0:9292'
+  end
+
+  def sso_server
+    'http://218.245.2.174:8080/ssoServer'
+  end
+
+  def app_id
+    'kidslib'
+  end
+
+  def cas_service
+    "service=#{ site_url }/set-session"
+  end
+
+  def cas_login_url
+    "#{ sso_server }/login?AppId=#{ app_id }&#{ cas_service }"
+  end
+
+  def cas_validate_url
+    "#{ sso_server }/serviceValidate?#{ cas_service }&ticket="
+  end
+
+  def cas_logout_url
+    "#{ sso_server }/logout?#{ cas_service }"
+  end
+
+  def session_valid_for
+    60 * 10
+  end # 单位是秒
 
   # 对外暴露的函数
   # ----
@@ -181,5 +199,3 @@ get '/*' do |path|
     '没找到请求的资源。试试其它的？'
   end
 end
-
-

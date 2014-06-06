@@ -1,6 +1,7 @@
 source 'http://rubygems.org'
 
-gem 'sinantra'
+gem 'sinatra'
 gem 'sanitize'
 gem 'http'
 gem 'rack-test'
+gem 'rake'

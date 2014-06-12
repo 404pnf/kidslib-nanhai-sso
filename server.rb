@@ -1,12 +1,10 @@
 # 如何使用
-# ----
 #
 #      rackup
 #
 # 站点会运行在 http://localhost:9292
 
 # 整体思路说明
-# ----
 # 1. 第一次验证通过后，我们需要把验证信息对应用户在本地存一下，并设定过期时间
 # 2. 这个信息用cookie的形式让用户也存着
 # 3. 如果过期了，我们要求用户再去验证，如果没有过期.就继续允许用户访问
@@ -25,23 +23,17 @@ require 'pstore'
 require 'yaml/store'
 require 'sanitize'
 
-# ----
 configure do
   # set :bind, '192.168.103.99' # http://stackoverflow.com/questions/16832472/ruby-sinatra-webservice-running-on-localhost4567-but-not-on-ip
   enable :sessions # all request will have session either we set it or rack:session sets it automatically
 end
 
 # 站点帮助函数
-# ----
 helpers do
+  # true: thread safe. see pstore doc
+  DB = YAML::Store.new('sess.yml', true)
 
-  # - 单线程跑这个程序，内存中就会持久化这个DB
-  # - 之前测试不行是因为每次请求 shotgun 都重新载入这个文件
-  # DB = {}
-
-  DB = YAML::Store.new('sess.yml', true) # true: thread safe. see pstore doc
   # 一些常量
-  # ----
   def site_url
     'http://0.0.0.0:9292'
   end
@@ -75,9 +67,7 @@ helpers do
   end # 单位是秒
 
   # 对外暴露的函数
-  # ----
   def save_ticket(ticket, name)
-    # DB[ticket] = { user: name, time: Time.now.to_i }
     DB.transaction do
       DB[ticket] = { user: Sanitize.clean(name), time: Time.now.to_i }
       DB.commit
@@ -89,7 +79,6 @@ helpers do
   end
 
   def delete_ticket(ticket)
-    # DB.delete ticket
     DB.transaction do
       DB.delete ticket
       DB.commit
@@ -97,7 +86,6 @@ helpers do
   end
 
   # 验证ticket
-  # ----
   # - http://sso.server.ip.address/ssoServer/serviceValidate
   # - 需要参数是 service 和  ticket
   # - 正确的话返回用户名字符串 \n\t\n\t\tzhj\n\n\n\t\n\n
@@ -108,11 +96,9 @@ helpers do
     r = res.to_s.gsub(/\s/, '')
     save_ticket(ticket, r) if status
     status
-    # !!r.to_s['cas:authenticationSuccess']
   end
 
   # 帮助函数
-  # ----
   def valid_ticket?(ticket)
     if not_expired(ticket) # 本地或者cas服务器上有ticket有效。因为我本地设定的过期时间很可能比cas上短
       extend_ticket_time(ticket)
@@ -127,14 +113,12 @@ helpers do
   end
 
   def timestamp(ticket)
-    # DB[ticket] ? DB[ticket][:time].to_i : 0 # 如果 DB[ticket] 的值是 nil，会转为数字0，好让其它函数做时间上的加减。
     DB.transaction(true) do # true means read-only
       DB[ticket] ? DB[ticket][:time].to_i : 0
     end
   end
 
   def extend_ticket_time(ticket)
-    # DB[ticket][:time] = Time.now.to_i
     DB.transaction do
       DB[ticket][:time] = Time.now.to_i
       DB.commit
@@ -143,8 +127,10 @@ helpers do
 
 end # 帮助函数结束
 
-# ----
-
+# 截获所有要求访问html的请求。
+# 如果已经有了该html的静态文件在public
+# 则无法截获
+# sinatra的规则是先探测静态文件再到路由
 before '/*.html' do
   if valid?(session['ticket'])
     pass
@@ -153,6 +139,7 @@ before '/*.html' do
   end
 end
 
+# 路由
 get '/' do
   redirect '/index.html'
 end
@@ -166,7 +153,6 @@ get '/logout' do
   redirect cas_logout_url
 end
 
-# ----
 # ## 设置session
 # - 登陆service在正常登陆后会在返回地址带上ticket
 # - 例如:http://xxx/yyy.asp?ticket=qweury03432432423ktjgj)
@@ -181,8 +167,6 @@ get '/set-session' do
   end
 end
 
-# ----
-
 get '/db' do
   "#{DB.psych_to_yaml}" # DB.to_s only gives you  "#<PStore:0x000001014b54b8>"
 end
@@ -190,10 +174,6 @@ end
 get '/test/set/:ticket/:name' do
   save_ticket params[:ticket], params[:name]
 end
-
-# get '/db/clear' do
-#   DB.clear
-# end
 
 get '/*' do |path|
   begin

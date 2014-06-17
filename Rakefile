@@ -10,7 +10,7 @@ end
 
 desc "genreate docs"
 task :doc do
-  system("docco -l linear *.rb")
+  system("docco -l parallel *.rb")
 end
 
 desc "show stats of line of code "

@@ -21,7 +21,7 @@ require 'http' # https://github.com/tarcieri/http
 require 'uri'
 require 'pstore'
 require 'yaml/store'
-require 'sanitize'
+require 'sanitize' # https://github.com/rgrove/sanitize
 
 configure do
   # set :bind, '192.168.103.99' # http://stackoverflow.com/questions/16832472/ruby-sinatra-webservice-running-on-localhost4567-but-not-on-ip

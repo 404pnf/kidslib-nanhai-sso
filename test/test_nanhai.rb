@@ -15,6 +15,7 @@ class NanhaiTest < Test::Unit::TestCase
   end
 
   def test_user_can_log_in_with_correct_session
+    get '/test/set/sample-ticket/rakc-test-user'
   end
 
   # def test_session_will_expired

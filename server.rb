@@ -35,15 +35,15 @@ helpers do
 
   # 一些常量
   def site_url
-    'http://0.0.0.0:9292'
+    YAML.load(File.read './conf.yml')['site_url']
   end
 
   def sso_server
-    'http://218.245.2.174:8080/ssoServer'
+    YAML.load(File.read './conf.yml')['sso_server']
   end
 
   def app_id
-    'kidslib'
+    YAML.load(File.read './conf.yml')['kidslib']
   end
 
   def cas_service
@@ -63,7 +63,7 @@ helpers do
   end
 
   def session_valid_for
-    60 * 10
+    YAML.load(File.read './conf.yml')['session_valid_for']
   end # 单位是秒
 
   # 对外暴露的函数
@@ -160,21 +160,28 @@ get '/set-session' do
   ticket = params['ticket']
   r = remote_ticket?(ticket)
   if r
-    session['ticket'] = ticket # 可浏览器设定session
+    session['ticket'] = ticket # 浏览器设定session
     redirect '/'
   else
     redirect '/login'
   end
 end
 
+# for debug
 get '/db' do
   "#{DB.psych_to_yaml}" # DB.to_s only gives you  "#<PStore:0x000001014b54b8>"
+end
+
+get '/session' do
+  "#{session.inspect}"
 end
 
 get '/test/set/:ticket/:name' do
   save_ticket params[:ticket], params[:name]
 end
 
+# 访问错误页面的提示信息。
+# 也许可以重定向到首页。
 get '/*' do |path|
   begin
     File.read "html/#{path}"

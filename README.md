@@ -1,3 +1,6 @@
+
+![master](https://travis-ci.org/404pnf/kidslib-nanhai-sso.svg)
+
 nanhai-sso
 ==========
 

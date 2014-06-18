@@ -26,6 +26,7 @@ require 'sanitize' # https://github.com/rgrove/sanitize
 configure do
   # set :bind, '192.168.103.99' # http://stackoverflow.com/questions/16832472/ruby-sinatra-webservice-running-on-localhost4567-but-not-on-ip
   enable :sessions # all request will have session either we set it or rack:session sets it automatically
+  set :session_secret, 'ftrpl'
 end
 
 # 站点帮助函数

@@ -1,0 +1,38 @@
+
+
+## 服务器要求和安装帮助
+
+1. 一台linux服务器，硬盘至少50G。因为该站点文件就有40G。内存512M以上即可
+
+1. 用rvm安装ruby 2.1 方法： https://ruby-china.org/wiki/rvm-guide
+
+1. 复制站点文件夹到服务器某目录，进入该目录，安装所有依赖包
+
+   sh INSTALL_DEPENDENCIES.sh
+
+1. 启动站点
+
+  ./start.sh &
+
+1. 站点会启动在9292端口，可在任意服务器安装web server反向代理过来，并在web server上缓存一些静态文件
+
+  现在线上给南海服务器的机器就没有外网ip，我们是借用社网一台有ip的机器反向代理的
+
+1. 停止站点
+
+  ./stop.sh
+
+## SSO配置
+
+1. 在站点文件夹中编辑conf.yml文件。参数的定义都按照网院给的sso接口
+
+  现在配置如下
+
+      site_url: http://218.247.244.23:8888 // 注意如果用反向代理这里是反向代理的地址和端口
+      sso_server: http://218.245.2.174:8080/ssoServer
+      app_id: kidslib
+      session_valid_for: 3600
+
+  只有session_valid_for是我自己定义的，表示我本地让用户session多长时间后过期，过期后需要再去sso服务器验证。单位是秒。
+
+

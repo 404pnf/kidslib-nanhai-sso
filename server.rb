@@ -38,7 +38,7 @@ class Nanhai < Sinatra::Base
   # set :bind, '192.168.103.99' # http://stackoverflow.com/questions/16832472/ruby-sinatra-webservice-running-on-localhost4567-but-not-on-ip
   enable :sessions # all request will have session either we set it or rack:session sets it automatically
   set :session_secret, 'ftrpl'
-  # set :static, false
+  set :static, false
 
 
   # 站点帮助函数

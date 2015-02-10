@@ -1,4 +1,4 @@
-site_url: http://http://218.247.244.23:8888 # sites running aat
+site_url: http://218.247.244.23:8888 # sites running aat
 sso_server: http://218.245.2.174:8080/ssoServer # sso server
 app_id: kidslib  # application id at sso server
 session_valid_for: 3600 # session timeout in seconds

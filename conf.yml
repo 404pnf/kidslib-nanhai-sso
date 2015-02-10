@@ -1,4 +1,4 @@
-site_url: http://http://218.247.244.23:8888 # 少儿馆运行在哪个地址
-sso_server: http://218.245.2.174:8080/ssoServer # sso服务器的地址
-app_id: kidslib  # 在sso服务器注册用应用id
-session_valid_for: 600 # 本地session有效时间。单位是秒
+site_url: http://http://218.247.244.23:8888 # sites running aat
+sso_server: http://218.245.2.174:8080/ssoServer # sso server
+app_id: kidslib  # application id at sso server
+session_valid_for: 600 # session timeout in seconds

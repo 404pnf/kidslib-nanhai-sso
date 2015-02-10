@@ -194,11 +194,11 @@ class Nanhai < Sinatra::Base
   end
 
   get '/*.*' do |path, ext|
-    # if valid?(session['ticket'])
+    if valid?(session['ticket'])
       send_file "public/#{path}.#{ext}"
-    # else
-    #   redirect '/login'
-    # end
+    else
+      redirect '/login'
+    end
   end
 
   # 访问错误页面的提示信息。
